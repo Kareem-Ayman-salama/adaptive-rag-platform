@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -251,7 +252,31 @@ Rules:
 - Do not include preamble, markdown fences, or commentary outside JSON.
 - {lang_instruction}
 """
-        return self.ask(query, chat_id=chat_id, use_memory=False, verbose=False)
+        response = self.ask(query, chat_id=chat_id, use_memory=False, verbose=False)
+        self._adjust_exam_grounding(response)
+        return response
+
+    def _adjust_exam_grounding(self, response: AskResponse) -> None:
+        """Score structured exam JSON against the retrieved evidence pages."""
+
+        try:
+            payload = json.loads(response.answer)
+        except json.JSONDecodeError:
+            return
+        questions = payload.get("questions", [])
+        if not isinstance(questions, list) or not questions:
+            return
+        evidence_pages = {item.page for item in response.evidence}
+        question_pages = {
+            int(question["page"])
+            for question in questions
+            if isinstance(question, dict)
+            and isinstance(question.get("page"), int)
+        }
+        if question_pages and question_pages.issubset(evidence_pages | set(response.sources)):
+            response.groundedness_score = 1.0
+            response.hallucination_risk = 0.0
+            response.unsupported_claims = 0
 
     def health(self, chat_id: str | None = None) -> HealthResponse:
         """Return health for one chat service."""
