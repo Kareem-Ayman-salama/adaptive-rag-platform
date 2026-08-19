@@ -601,6 +601,7 @@ function TeamSection() {
     { name: "Jana Ashraf", initials: "JA", from: "var(--vio)", to: "var(--acc2)" },
     { name: "Sama Hany", initials: "SH", from: "var(--ok)", to: "var(--acc)" },
     { name: "Sara Elsafty", initials: "SE", from: "var(--warn)", to: "var(--vio)" },
+    { name: "Nadin Farid", initials: "NF", from: "var(--bad)", to: "var(--warn)" },
   ];
   return (
     <section id="team" className="relative py-24">
@@ -616,9 +617,13 @@ function TeamSection() {
             desc="Named after Kemet — the ancient name of Egypt, the black land. We build document intelligence for the next era of knowledge."
           />
         </Reveal>
-        <div className="mx-auto mt-14 grid max-w-4xl grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mx-auto mt-14 grid max-w-5xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {members.map((m, i) => (
-            <Reveal key={m.name} delay={i * 90}>
+            <Reveal
+              key={m.name}
+              delay={i * 90}
+              className={cn(i === members.length - 1 && "col-span-2 sm:col-span-1")}
+            >
               <Card hover className="group relative overflow-hidden p-6 text-center">
                 <div
                   className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-[0.08] transition-opacity duration-300 group-hover:opacity-[0.16]"
@@ -924,7 +929,7 @@ function Footer() {
             © 2025 {branding.name} — built for the Advanced Multimodal RAG Hackathon. All metrics shown are sample data.
           </p>
           <p className="font-mono text-[11px] text-mut">
-            Crafted by <span className="font-semibold text-acc">Team Kemet AI</span> — Kareem Ayman · Jana Ashraf · Sama Hany · Sara Elsafty
+            Crafted by <span className="font-semibold text-acc">Team Kemet AI</span> — Kareem Ayman · Jana Ashraf · Sama Hany · Sara Elsafty · Nadin Farid
           </p>
         </div>
       </div>

@@ -12,6 +12,8 @@ import {
   ListChecks,
   Focus,
   AlertTriangle,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { api } from "../services/api";
 import { defaultDocumentId } from "../config/branding";
@@ -242,26 +244,60 @@ export default function ExamStudioPage() {
           <div className="mt-5">
             <div className="mb-1.5 flex items-center justify-between">
               <label htmlFor="exam-count" className="text-[12px] font-medium text-mut">
-                Number of questions
+                Number of questions <span className="font-mono text-[10px] uppercase tracking-wider text-acc">you decide</span>
               </label>
-              <span className="rounded-md border border-acc/30 bg-acc/10 px-2 py-0.5 font-mono text-[12px] font-semibold text-acc">
-                {count}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  aria-label="Fewer questions"
+                  disabled={running || count <= 1}
+                  onClick={() => setCount((c) => Math.max(1, c - 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-inset text-mut transition-all hover:border-acc/40 hover:text-acc active:scale-90 disabled:opacity-40"
+                >
+                  <Minus className="w-3 h-3" />
+                </button>
+                <input
+                  id="exam-count"
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={count}
+                  disabled={running}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setCount(Number.isFinite(v) ? Math.min(30, Math.max(1, Math.round(v))) : 1);
+                  }}
+                  className="h-7 w-14 rounded-md border border-acc/30 bg-acc/10 text-center font-mono text-[13px] font-semibold text-acc outline-none transition-colors focus:border-acc/60 disabled:opacity-50"
+                />
+                <button
+                  type="button"
+                  aria-label="More questions"
+                  disabled={running || count >= 30}
+                  onClick={() => setCount((c) => Math.min(30, c + 1))}
+                  className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-inset text-mut transition-all hover:border-acc/40 hover:text-acc active:scale-90 disabled:opacity-40"
+                >
+                  <Plus className="w-3 h-3" />
+                </button>
+              </div>
             </div>
             <input
-              id="exam-count"
+              aria-label="Number of questions slider"
               type="range"
-              min={4}
-              max={12}
+              min={1}
+              max={30}
               value={count}
               disabled={running}
               onChange={(e) => setCount(Number(e.target.value))}
               className="w-full accent-[var(--acc)]"
             />
             <div className="flex justify-between font-mono text-[10px] text-faint">
-              <span>4</span>
-              <span>12</span>
+              <span>1</span>
+              <span>15</span>
+              <span>30</span>
             </div>
+            <p className="mt-1.5 font-mono text-[10px] text-faint">
+              exact count is honored — questions are drafted then trimmed to {count}
+            </p>
           </div>
 
           <div className="mt-5">
@@ -290,7 +326,9 @@ export default function ExamStudioPage() {
           </div>
 
           <div className="mt-5">
-            <p className="mb-1.5 text-[12px] font-medium text-mut">Difficulty</p>
+            <p className="mb-1.5 text-[12px] font-medium text-mut">
+              Difficulty <span className="font-mono text-[10px] uppercase tracking-wider text-acc">you decide</span>
+            </p>
             <div className="grid grid-cols-3 gap-1.5 rounded-lg border border-line bg-inset p-1.5">
               {(Object.keys(DIFF_META) as ExamDifficulty[]).map((d) => (
                 <button
@@ -307,6 +345,11 @@ export default function ExamStudioPage() {
                 </button>
               ))}
             </div>
+            <p className="anim-rise mt-1.5 font-mono text-[10px] text-faint">
+              {difficulty === "easy" && "recall & definitions — fast checks for wide classes"}
+              {difficulty === "medium" && "application & comparison — balanced coverage"}
+              {difficulty === "hard" && "analysis & synthesis — for advanced assessment"}
+            </p>
           </div>
 
           <div className="mt-5">
@@ -429,6 +472,12 @@ export default function ExamStudioPage() {
                 {exam.config.focus && (
                   <p className="mt-3 font-mono text-[11px] text-faint">
                     focus: <span className="text-vio">{exam.config.focus}</span>
+                  </p>
+                )}
+                {exam.questions.length < exam.config.count && (
+                  <p className="anim-rise mt-3 inline-flex items-center gap-2 rounded-md border border-warn/25 bg-warn/5 px-3 py-1.5 font-mono text-[11px] text-warn">
+                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                    demo bank holds {exam.questions.length} unique questions for this source — asked for {exam.config.count}
                   </p>
                 )}
               </Card>

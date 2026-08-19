@@ -173,6 +173,140 @@ const researchBank: Array<Omit<ExamQuestion, "id" | "index">> = [
     { page: 7, section: "Section 2.4 · Evaluation design" },
     "easy"
   ),
+  q(
+    "mcq",
+    "Which fusion method merges the dense and sparse retrieval lists?",
+    "Reciprocal rank fusion",
+    { page: 21, section: "Figure 5" },
+    "medium",
+    {
+      options: ["Round-robin merge", "Reciprocal rank fusion", "Score averaging", "Longest-list wins"],
+      correctIndex: 1,
+      explanation: "The system diagram labels the fusion layer as reciprocal rank fusion.",
+    }
+  ),
+  q(
+    "mcq",
+    "How many candidate passages does the reranker re-score before generation?",
+    "Top-12 down to top-4",
+    { page: 21, section: "Figure 5" },
+    "easy",
+    {
+      options: ["Top-5 down to top-2", "Top-12 down to top-4", "Top-50 down to top-10", "All candidates"],
+      correctIndex: 1,
+      explanation: "The pipeline description states a top-12 → top-4 reranking stage.",
+    }
+  ),
+  q(
+    "mcq",
+    "According to Table 1, what share of the evaluated corpus is table-heavy?",
+    "22%",
+    { page: 5, section: "Table 1" },
+    "easy",
+    {
+      options: ["12%", "20%", "22%", "58%"],
+      correctIndex: 2,
+      explanation: "Table 1 reports 58% text-heavy, 22% table-heavy and 20% visual documents.",
+    }
+  ),
+  q(
+    "mcq",
+    "At what document scale does Figure 8 replicate the ordering seen in Figure 3?",
+    "4× the original volume",
+    { page: 36, section: "Figure 8" },
+    "medium",
+    {
+      options: ["2× the original volume", "4× the original volume", "10× the original volume", "The same volume"],
+      correctIndex: 1,
+      explanation: "Figure 8 repeats the experiment at 4× document volume with the same pipeline ordering.",
+    }
+  ),
+  q(
+    "mcq",
+    "What does the context builder assemble before generation?",
+    "Parent–child context around each retrieved chunk",
+    { page: 21, section: "Figure 5" },
+    "medium",
+    {
+      options: [
+        "A summary of the whole document",
+        "Parent–child context around each retrieved chunk",
+        "A list of keywords",
+        "The raw PDF pages",
+      ],
+      correctIndex: 1,
+      explanation: "The context builder stage is described as parent–child context assembly.",
+    }
+  ),
+  q(
+    "mcq",
+    "Which index is responsible for figures, diagrams and OCR content?",
+    "The vision index",
+    { page: 21, section: "Figure 5" },
+    "easy",
+    {
+      options: ["The sparse index", "The vision index", "The table index", "The keyword cache"],
+      correctIndex: 1,
+      explanation: "The vision pipeline feeds figures, diagrams and scanned pages into the vision index.",
+    }
+  ),
+  q(
+    "truefalse",
+    "BM25 sparse search is one of the two signals used in hybrid retrieval.",
+    "True",
+    { page: 21, section: "Figure 5" },
+    "easy",
+    {
+      options: ["True", "False"],
+      correctIndex: 0,
+      explanation: "Hybrid retrieval fuses dense semantic search with BM25 keyword search.",
+    }
+  ),
+  q(
+    "truefalse",
+    "Reranking happens after fusion and before generation.",
+    "True",
+    { page: 21, section: "Figure 5" },
+    "medium",
+    {
+      options: ["True", "False"],
+      correctIndex: 0,
+      explanation: "The flow is fusion → rerank → context builder → generation.",
+    }
+  ),
+  q(
+    "truefalse",
+    "The 200 ms p95 budget applies to offline batch indexing.",
+    "False",
+    { page: 7, section: "Section 2.4 · Evaluation design" },
+    "hard",
+    {
+      options: ["True", "False"],
+      correctIndex: 1,
+      explanation: "The budget is defined for interactive queries, not for offline indexing.",
+    }
+  ),
+  q(
+    "short",
+    "Name the three modality pipelines shown in the system diagram.",
+    "Text pipeline, vision pipeline, and table/chart pipeline.",
+    { page: 21, section: "Figure 5" },
+    "easy"
+  ),
+  q(
+    "short",
+    "Which two search signals does the fusion layer combine?",
+    "Dense semantic search and BM25 keyword (sparse) search.",
+    { page: 21, section: "Figure 5" },
+    "medium"
+  ),
+  q(
+    "short",
+    "Summarize the corpus composition reported in Table 1.",
+    "1.2k mixed-modality documents: 58% text-heavy, 22% table-heavy and 20% visual.",
+    { page: 5, section: "Table 1" },
+    "medium"
+  ),
 ];
 
 const fallbackBank: Array<Omit<ExamQuestion, "id" | "index">> = [
@@ -241,6 +375,140 @@ const fallbackBank: Array<Omit<ExamQuestion, "id" | "index">> = [
     "What condition does the document give for revisiting its main recommendation?",
     "If the underlying assumptions in Section 2 change materially, the recommendation should be re-evaluated.",
     { page: 26, section: "Section 6 · Recommendations" },
+    "hard"
+  ),
+  q(
+    "mcq",
+    "Which section defines the scope of the evaluation?",
+    "Section 2 · Methodology",
+    { page: 5, section: "Section 2 · Methodology" },
+    "easy",
+    {
+      options: ["Section 1 · Overview", "Section 2 · Methodology", "Section 4 · Findings", "Section 6 · Recommendations"],
+      correctIndex: 1,
+      explanation: "The methodology section sets the evaluation scope and constraints.",
+    }
+  ),
+  q(
+    "mcq",
+    "Which appendix indexes every figure referenced in the main text?",
+    "Appendix A",
+    { page: 30, section: "Appendix A" },
+    "easy",
+    {
+      options: ["Appendix A", "Appendix B", "Appendix C", "There is no figure index"],
+      correctIndex: 0,
+      explanation: "Appendix A is the figure index referenced throughout the document.",
+    }
+  ),
+  q(
+    "mcq",
+    "What review cadence do the recommendations propose?",
+    "A quarterly review",
+    { page: 26, section: "Section 6 · Recommendations" },
+    "medium",
+    {
+      options: ["A weekly review", "A monthly review", "A quarterly review", "An annual review"],
+      correctIndex: 2,
+      explanation: "The closing section proposes a quarterly review cycle.",
+    }
+  ),
+  q(
+    "mcq",
+    "Which instrument does the methodology describe for primary data collection?",
+    "A structured survey",
+    { page: 5, section: "Section 2 · Methodology" },
+    "medium",
+    {
+      options: ["Open interviews", "A structured survey", "Sensor telemetry", "Public datasets only"],
+      correctIndex: 1,
+      explanation: "Primary data is collected via a structured survey as described in Section 2.",
+    }
+  ),
+  q(
+    "mcq",
+    "Which segment shows the highest reported margin in the breakdown table?",
+    "The enterprise segment",
+    { page: 14, section: "Table 3" },
+    "hard",
+    {
+      options: ["The consumer segment", "The SMB segment", "The enterprise segment", "All segments are equal"],
+      correctIndex: 2,
+      explanation: "Table 3 lists the enterprise segment with the highest margin row.",
+    }
+  ),
+  q(
+    "mcq",
+    "What does the closing chart compare?",
+    "Projected versus actual totals across three quarters",
+    { page: 22, section: "Figure 6" },
+    "medium",
+    {
+      options: [
+        "Projected versus actual totals across three quarters",
+        "Headcount by department",
+        "Vendor pricing tiers",
+        "Regional distribution only",
+      ],
+      correctIndex: 0,
+      explanation: "Figure 6 plots projected against actual totals for Q1–Q3.",
+    }
+  ),
+  q(
+    "truefalse",
+    "The limitations section scopes all claims to the evaluated corpus.",
+    "True",
+    { page: 24, section: "Section 5 · Limitations" },
+    "easy",
+    {
+      options: ["True", "False"],
+      correctIndex: 0,
+      explanation: "Section 5 explicitly limits the claims to the evaluated corpus.",
+    }
+  ),
+  q(
+    "truefalse",
+    "The recommendations section appears before the methodology.",
+    "False",
+    { page: 26, section: "Section 6 · Recommendations" },
+    "easy",
+    {
+      options: ["True", "False"],
+      correctIndex: 1,
+      explanation: "Methodology (Section 2) precedes recommendations (Section 6).",
+    }
+  ),
+  q(
+    "truefalse",
+    "Figure 6 includes a projection line for the next quarter.",
+    "False",
+    { page: 22, section: "Figure 6" },
+    "hard",
+    {
+      options: ["True", "False"],
+      correctIndex: 1,
+      explanation: "Figure 6 covers Q1–Q3 only; no forward projection line is drawn.",
+    }
+  ),
+  q(
+    "short",
+    "List the three phases of the recommended adoption plan.",
+    "Pilot, scale, and optimize.",
+    { page: 26, section: "Section 6 · Recommendations" },
+    "medium"
+  ),
+  q(
+    "short",
+    "What does the sampling approach described in the methodology aim to balance?",
+    "Representation across segments while keeping the survey cost bounded.",
+    { page: 5, section: "Section 2 · Methodology" },
+    "medium"
+  ),
+  q(
+    "short",
+    "According to Table 3, which cost category grew fastest quarter over quarter?",
+    "Operating costs, driven by the enterprise segment.",
+    { page: 14, section: "Table 3" },
     "hard"
   ),
 ];
