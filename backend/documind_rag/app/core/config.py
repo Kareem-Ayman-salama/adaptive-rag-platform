@@ -19,6 +19,18 @@ class AppConfig:
     """Runtime settings for the RAG API."""
 
     groq_api_key: str | None = os.environ.get("GROQ_API_KEY")
+    database_url: str = os.environ.get(
+        "DATABASE_URL",
+        f"sqlite:///{(BACKEND_ROOT / 'documind.db').as_posix()}",
+    )
+    jwt_secret_key: str = os.environ.get(
+        "JWT_SECRET_KEY",
+        "change-this-secret-in-production",
+    )
+    jwt_algorithm: str = os.environ.get("JWT_ALGORITHM", "HS256")
+    access_token_expire_minutes: int = int(
+        os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", "10080")
+    )
     pdf_paths: tuple[str, ...] = field(
         default_factory=lambda: tuple(
             path.strip()

@@ -7,11 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from documind_rag.app.controllers import (
     assistant_controller,
+    auth_controller,
     document_controller,
     exam_controller,
     health_controller,
 )
 from documind_rag.app.core.config import get_config
+from documind_rag.app.core.database import init_db
 from documind_rag.app.core.dependencies import get_rag_manager
 
 
@@ -27,6 +29,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.include_router(auth_controller.router)
     app.include_router(health_controller.router)
     app.include_router(document_controller.router)
     app.include_router(assistant_controller.router)
@@ -36,6 +39,7 @@ def create_app() -> FastAPI:
     def startup() -> None:
         """Optionally build indexes on API startup."""
 
+        init_db()
         if config.auto_build_on_startup and config.pdf_paths:
             get_rag_manager().build(list(config.pdf_paths))
 

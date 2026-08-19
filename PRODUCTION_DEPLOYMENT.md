@@ -26,6 +26,8 @@ Set variables in Railway:
 
 ```env
 GROQ_API_KEY=your_new_groq_key
+DATABASE_URL=${{ Postgres.DATABASE_URL }}
+JWT_SECRET_KEY=generate_a_long_random_secret
 FRONTEND_ORIGINS=https://your-frontend-domain.com,http://localhost:5173
 DOCUMIND_AUTO_BUILD=false
 DOCUMIND_PDF_PATHS=

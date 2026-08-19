@@ -1,10 +1,4 @@
-import type { } from "../types";
-
-/**
- * Mock authentication service — accounts and sessions persist in localStorage.
- * Swap the internals for real HTTP calls (POST /auth/login etc.) later;
- * the public API stays the same.
- */
+/// <reference types="vite/client" />
 
 export interface AuthUser {
   id: string;
@@ -13,68 +7,70 @@ export interface AuthUser {
   createdAt: string;
 }
 
-interface StoredAccount extends AuthUser {
-  password: string;
-}
+type BackendUser = {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+};
 
-interface AuthState {
-  accounts: StoredAccount[];
-  sessionUserId: string | null;
-}
+type AuthResponse = {
+  access_token: string;
+  token_type: "bearer";
+  user: BackendUser;
+};
 
-const LS_KEY = "dm-auth";
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const TOKEN_KEY = "dm-auth-token";
+const USER_KEY = "dm-auth-user";
 
-function load(): AuthState {
-  const demo: StoredAccount = {
-    id: "u-demo",
-    name: "Demo Judge",
-    email: "demo@documind.ai",
-    password: "demo1234",
-    createdAt: new Date("2025-11-20T10:00:00Z").toISOString(),
-  };
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as AuthState;
-      if (Array.isArray(parsed.accounts) && parsed.accounts.length > 0) return parsed;
-    }
-  } catch {
-    /* ignore */
-  }
-  return { accounts: [demo], sessionUserId: null };
-}
-
-let state: AuthState = load();
 const listeners = new Set<(u: AuthUser | null) => void>();
 
-function persist() {
+const toUser = (user: BackendUser): AuthUser => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  createdAt: user.created_at,
+});
+
+const readUser = (): AuthUser | null => {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? (JSON.parse(raw) as AuthUser) : null;
   } catch {
-    /* ignore */
+    return null;
   }
-}
+};
 
-function toUser(a: StoredAccount): AuthUser {
-  const { password: _pw, ...user } = a;
-  void _pw;
+const notify = () => {
+  const user = readUser();
+  listeners.forEach((listener) => listener(user));
+};
+
+const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const response = await fetch(`${API_BASE_URL}${path}`, init);
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Request failed with ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+};
+
+const persistSession = (authResponse: AuthResponse): AuthUser => {
+  const user = toUser(authResponse.user);
+  localStorage.setItem(TOKEN_KEY, authResponse.access_token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  notify();
   return user;
-}
-
-function currentUser(): AuthUser | null {
-  const acc = state.accounts.find((a) => a.id === state.sessionUserId);
-  return acc ? toUser(acc) : null;
-}
-
-function notify() {
-  const u = currentUser();
-  listeners.forEach((l) => l(u));
-}
+};
 
 export const auth = {
   getSessionUser(): AuthUser | null {
-    return currentUser();
+    return readUser();
+  },
+
+  getAccessToken(): string | null {
+    return localStorage.getItem(TOKEN_KEY);
   },
 
   subscribe(cb: (u: AuthUser | null) => void): () => void {
@@ -85,45 +81,43 @@ export const auth = {
   },
 
   async signIn(email: string, password: string): Promise<AuthUser> {
-    await delay(650);
-    const acc = state.accounts.find(
-      (a) => a.email.toLowerCase() === email.trim().toLowerCase()
-    );
-    if (!acc || acc.password !== password) {
-      throw new Error("Invalid email or password.");
-    }
-    state.sessionUserId = acc.id;
-    persist();
-    notify();
-    return toUser(acc);
+    const response = await requestJson<AuthResponse>("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    return persistSession(response);
   },
 
   async signUp(name: string, email: string, password: string): Promise<AuthUser> {
-    await delay(800);
-    const exists = state.accounts.some(
-      (a) => a.email.toLowerCase() === email.trim().toLowerCase()
-    );
-    if (exists) {
-      throw new Error("An account with this email already exists.");
+    const response = await requestJson<AuthResponse>("/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, password }),
+    });
+    return persistSession(response);
+  },
+
+  async refreshSession(): Promise<AuthUser | null> {
+    const token = auth.getAccessToken();
+    if (!token) return null;
+    try {
+      const user = await requestJson<BackendUser>("/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const mapped = toUser(user);
+      localStorage.setItem(USER_KEY, JSON.stringify(mapped));
+      notify();
+      return mapped;
+    } catch {
+      await auth.signOut();
+      return null;
     }
-    const acc: StoredAccount = {
-      id: `u-${Date.now().toString(36)}`,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      password,
-      createdAt: new Date().toISOString(),
-    };
-    state.accounts.push(acc);
-    state.sessionUserId = acc.id;
-    persist();
-    notify();
-    return toUser(acc);
   },
 
   async signOut(): Promise<void> {
-    await delay(250);
-    state.sessionUserId = null;
-    persist();
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     notify();
   },
 };

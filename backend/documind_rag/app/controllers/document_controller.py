@@ -7,7 +7,9 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from documind_rag.app.controllers.auth_controller import get_current_user
 from documind_rag.app.core.dependencies import get_rag_manager
+from documind_rag.app.models.user import User
 from documind_rag.app.schemas import BuildRequest, BuildResponse
 from documind_rag.rag.service import ChatRagManager
 
@@ -18,6 +20,7 @@ upload_root = Path(__file__).resolve().parents[2] / "documind_rag_uploads"
 @router.post("/build", response_model=BuildResponse)
 def build_index(
     request: BuildRequest,
+    current_user: User = Depends(get_current_user),
     rag_manager: ChatRagManager = Depends(get_rag_manager),
 ) -> BuildResponse:
     """Build document indexes from PDF paths visible to the backend."""
@@ -32,6 +35,7 @@ def build_index(
 async def upload_chat_source(
     chat_id: str,
     files: list[UploadFile] = File(...),
+    current_user: User = Depends(get_current_user),
     rag_manager: ChatRagManager = Depends(get_rag_manager),
 ) -> BuildResponse:
     """Upload one or more PDFs and build indexes for a chat."""
@@ -53,4 +57,3 @@ async def upload_chat_source(
         return rag_manager.build(saved_paths, chat_id=chat_id)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-

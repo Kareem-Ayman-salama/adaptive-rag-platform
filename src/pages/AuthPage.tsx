@@ -72,7 +72,7 @@ export default function AuthPage() {
       toast("Signed in with the demo account.");
       navigate(nav.documents);
     } catch {
-      setError("Demo account unavailable.");
+      setError("Demo account is not available on the production database. Create a new account instead.");
     } finally {
       setBusy(false);
     }
@@ -261,9 +261,9 @@ export default function AuthPage() {
               </div>
 
               <p className="mt-5 text-center text-[11px] leading-relaxed text-faint">
-                Accounts are stored locally in this demo build.
+                Accounts are stored securely in the backend database.
                 <br />
-                <Badge tone="amber">Frontend demo — no server required</Badge>
+                <Badge tone="green">Production auth enabled</Badge>
               </p>
             </div>
           </div>

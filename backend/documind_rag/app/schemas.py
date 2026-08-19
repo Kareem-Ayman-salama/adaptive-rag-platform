@@ -123,3 +123,35 @@ class ChatHistoryResponse(BaseModel):
 
     chat_id: str
     messages: list[ChatMessage]
+
+
+class UserResponse(BaseModel):
+    """Authenticated user profile."""
+
+    id: str
+    name: str
+    email: str
+    created_at: str
+
+
+class AuthSignupRequest(BaseModel):
+    """Account registration request."""
+
+    name: str = Field(..., min_length=2, max_length=120)
+    email: str = Field(..., min_length=5, max_length=255)
+    password: str = Field(..., min_length=6, max_length=128)
+
+
+class AuthLoginRequest(BaseModel):
+    """Login request."""
+
+    email: str = Field(..., min_length=5, max_length=255)
+    password: str = Field(..., min_length=6, max_length=128)
+
+
+class AuthResponse(BaseModel):
+    """Authentication response containing a bearer token."""
+
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

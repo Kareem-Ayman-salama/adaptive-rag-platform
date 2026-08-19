@@ -13,6 +13,7 @@ import type {
   QueryType,
   UploadStage,
 } from "../types";
+import { auth } from "./auth";
 import { analyticsBundle, dashboardStats } from "../mock/analytics";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -49,6 +50,11 @@ const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
     throw new Error(body.detail ?? `Request failed with ${response.status}`);
   }
   return response.json() as Promise<T>;
+};
+
+const authHeaders = (): Record<string, string> => {
+  const token = auth.getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 type BackendEvidence = {
@@ -222,6 +228,7 @@ export const api = {
 
     const build = await requestJson<BackendBuildResponse>(`/chats/${chatId}/sources`, {
       method: "POST",
+      headers: authHeaders(),
       body: form,
     });
 
@@ -250,7 +257,7 @@ export const api = {
     const startedAt = Date.now();
     const data = await requestJson<BackendAskResponse>("/ask", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({ chat_id: documentId, query: question, verbose: false, use_memory: true }),
     });
     return mapAskResponse(documentId, question, data, startedAt);
@@ -265,7 +272,7 @@ export const api = {
     onStage?.({ label: "Sending exam request to backend...", progress: 20 });
     const data = await requestJson<BackendAskResponse>("/exam", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify({
         chat_id: config.documentId,
         topic: config.focus,
