@@ -102,6 +102,7 @@ TOP_K_RETRIEVE = 15
 TOP_K_FINAL = 5
 
 MAX_CONTEXT_TOKENS = 6000
+MAX_ANSWER_TOKENS = int(os.environ.get("DOCUMIND_MAX_ANSWER_TOKENS", "2500"))
 
 CONFIDENCE_THRESHOLD = 0.30
 
@@ -237,12 +238,12 @@ print("Models loaded.")
 
 def _llm_text(
     temperature=0.1,
-    max_tokens=1000
+    max_tokens=None
 ):
     return ChatGroq(
         model=TEXT_MODEL,
         temperature=temperature,
-        max_tokens=max_tokens,
+        max_tokens=max_tokens or MAX_ANSWER_TOKENS,
     )
 
 
@@ -3313,7 +3314,7 @@ def generate_answer_text_only(
 
         _llm_text(
             temperature=0.1,
-            max_tokens=1000
+            max_tokens=MAX_ANSWER_TOKENS
         ),
 
         [
@@ -3481,7 +3482,7 @@ def generate_answer_multimodal(
 
         _llm_vision(
             temperature=0.1,
-            max_tokens=1000
+            max_tokens=MAX_ANSWER_TOKENS
         ),
 
         [

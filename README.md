@@ -34,6 +34,7 @@ JWT_SECRET_KEY=change-this-secret
 FRONTEND_ORIGINS=http://localhost:5173
 DOCUMIND_AUTO_BUILD=false
 DOCUMIND_LOW_MEMORY=true
+DOCUMIND_MAX_ANSWER_TOKENS=2500
 ```
 
 ## Frontend
