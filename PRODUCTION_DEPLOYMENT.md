@@ -31,6 +31,7 @@ JWT_SECRET_KEY=generate_a_long_random_secret
 FRONTEND_ORIGINS=https://your-frontend-domain.com,http://localhost:5173
 DOCUMIND_AUTO_BUILD=false
 DOCUMIND_PDF_PATHS=
+DOCUMIND_LOW_MEMORY=true
 ```
 
 Railway uses:

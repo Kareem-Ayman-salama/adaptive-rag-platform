@@ -33,6 +33,7 @@ DATABASE_URL=sqlite:///./documind.db
 JWT_SECRET_KEY=change-this-secret
 FRONTEND_ORIGINS=http://localhost:5173
 DOCUMIND_AUTO_BUILD=false
+DOCUMIND_LOW_MEMORY=true
 ```
 
 ## Frontend

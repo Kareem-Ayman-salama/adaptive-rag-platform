@@ -11,6 +11,7 @@ import io
 import re
 import json
 import math
+import hashlib
 import time
 import base64
 import statistics
@@ -22,8 +23,6 @@ import fitz
 import pdfplumber
 import numpy as np
 import cv2
-import torch
-import open_clip
 import pytesseract
 import imagehash
 
@@ -34,11 +33,9 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_community.retrievers import BM25Retriever
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 from langchain_groq import ChatGroq
 
 from documind_rag.rag.query_rewriting import rewrite_query
@@ -46,6 +43,17 @@ from documind_rag.rag.query_rewriting import rewrite_query
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(PACKAGE_ROOT / ".env")
 load_dotenv(PACKAGE_ROOT / "rag" / ".env")
+
+LOW_MEMORY_MODE = os.environ.get("DOCUMIND_LOW_MEMORY", "true").lower() == "true"
+
+if LOW_MEMORY_MODE:
+    torch = None
+    open_clip = None
+else:
+    import torch
+    import open_clip
+    from langchain_huggingface import HuggingFaceEmbeddings
+    from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 
 
@@ -136,33 +144,88 @@ SCAN_IMAGE_COVERAGE_THRESHOLD = 0.5
 #  LOAD MODELS
 
 
+class HashEmbeddings(Embeddings):
+    """Small deterministic embeddings for memory-constrained deployments."""
+
+    def __init__(self, dimension=384):
+        self.dimension = dimension
+
+    def _embed(self, text):
+        vector = np.zeros(self.dimension, dtype="float32")
+        tokens = re.findall(r"[\w\u0600-\u06FF]+", text.lower())
+        for token in tokens:
+            digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+            bucket = int.from_bytes(digest[:4], "big") % self.dimension
+            sign = 1.0 if digest[4] % 2 == 0 else -1.0
+            vector[bucket] += sign
+        norm = float(np.linalg.norm(vector))
+        if norm < 1e-6:
+            vector[0] = 1.0
+            return vector.tolist()
+        return (vector / norm).tolist()
+
+    def embed_documents(self, texts):
+        return [self._embed(text) for text in texts]
+
+    def embed_query(self, text):
+        return self._embed(text)
+
+
+class LightweightReranker:
+    """Token-overlap reranker compatible with the cross encoder interface."""
+
+    def score(self, pairs):
+        scores = []
+        for query, content in pairs:
+            query_tokens = _token_set(query)
+            content_tokens = _token_set(content[:2000])
+            if not query_tokens or not content_tokens:
+                scores.append(0.0)
+                continue
+            overlap = len(query_tokens & content_tokens) / max(len(query_tokens), 1)
+            scores.append((overlap * 8.0) - 4.0)
+        return scores
+
+
 print("Loading embedding model...")
 
-hf_embeddings = HuggingFaceEmbeddings(
-    model_name=EMBED_MODEL_NAME,
-    encode_kwargs={
-        "normalize_embeddings": True,
-        "batch_size": 32,
-    },
-)
+if LOW_MEMORY_MODE:
+    print("Low-memory mode enabled. Using lightweight hash embeddings.")
+    hf_embeddings = HashEmbeddings()
+else:
+    hf_embeddings = HuggingFaceEmbeddings(
+        model_name=EMBED_MODEL_NAME,
+        encode_kwargs={
+            "normalize_embeddings": True,
+            "batch_size": 32,
+        },
+    )
 
 print("Loading reranker...")
 
-cross_encoder = HuggingFaceCrossEncoder(
-    model_name=RERANK_MODEL_NAME
-)
+if LOW_MEMORY_MODE:
+    cross_encoder = LightweightReranker()
+else:
+    cross_encoder = HuggingFaceCrossEncoder(
+        model_name=RERANK_MODEL_NAME
+    )
 
 
 print("Loading CLIP...")
 
-clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
-    CLIP_MODEL_NAME,
-    pretrained=CLIP_PRETRAINED
-)
+if LOW_MEMORY_MODE:
+    clip_model = None
+    clip_preprocess = None
+    clip_tokenizer = None
+else:
+    clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
+        CLIP_MODEL_NAME,
+        pretrained=CLIP_PRETRAINED
+    )
 
-clip_tokenizer = open_clip.get_tokenizer(CLIP_MODEL_NAME)
+    clip_tokenizer = open_clip.get_tokenizer(CLIP_MODEL_NAME)
 
-clip_model.eval()
+    clip_model.eval()
 
 
 print("Models loaded.")
@@ -1564,6 +1627,8 @@ def build_indexes(kb):
 def embed_image_clip(
     pil_image
 ):
+    if LOW_MEMORY_MODE:
+        raise RuntimeError("CLIP image embeddings are disabled in low-memory mode.")
 
     img = clip_preprocess(
         pil_image
@@ -1588,6 +1653,8 @@ def embed_image_clip(
 def embed_text_clip(
     text
 ):
+    if LOW_MEMORY_MODE:
+        return hf_embeddings.embed_query(text)
 
     tokens = clip_tokenizer(
         [text[:300]]
@@ -1645,6 +1712,9 @@ class ClipQueryEmbeddings(
 
 
 def build_visual_index(kb):
+    if LOW_MEMORY_MODE:
+        print("Skipping visual index in low-memory mode.")
+        return None
 
     print(
         "\nBuilding lightweight visual index..."

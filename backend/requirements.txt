@@ -5,15 +5,11 @@ faiss-cpu
 langdetect
 pytesseract
 pillow==10.4.0
-open_clip_torch
-torch
 imagehash
 opencv-python-headless
 langchain
 langchain-community
 langchain-groq
-langchain-huggingface
-sentence-transformers
 groq
 fastapi
 uvicorn[standard]
