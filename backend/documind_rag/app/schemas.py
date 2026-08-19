@@ -111,6 +111,31 @@ class ExamRequest(BaseModel):
     language: Literal["ar", "en"] = "ar"
 
 
+class ExamQuestionResponse(BaseModel):
+    """Single source-grounded generated exam question."""
+
+    type: Literal["mcq", "true_false", "short_answer", "essay"] | str
+    question: str
+    options: list[str] = Field(default_factory=list)
+    answer: str
+    explanation: str | None = None
+    page: int | None = None
+    section: str | None = None
+
+
+class ExamResponse(BaseModel):
+    """Structured exam response for frontend and external API consumers."""
+
+    title: str
+    questions: list[ExamQuestionResponse]
+    confidence: float
+    hallucination_risk: float
+    groundedness_score: float
+    sources: list[int] = Field(default_factory=list)
+    evidence: list[EvidenceItem] = Field(default_factory=list)
+    raw: dict[str, Any] = Field(default_factory=dict)
+
+
 class ChatMessage(BaseModel):
     """Stored chat message."""
 

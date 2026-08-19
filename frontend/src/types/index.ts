@@ -165,10 +165,15 @@ export interface ExamQuestion {
 
 export interface GeneratedExam {
   id: string;
+  title: string;
   documentId: string;
   documentName: string;
   config: ExamConfig;
   questions: ExamQuestion[];
+  confidence: number;
+  hallucinationRisk: number;
+  groundednessScore: number;
+  sources: number[];
   generatedAt: string;
 }
 

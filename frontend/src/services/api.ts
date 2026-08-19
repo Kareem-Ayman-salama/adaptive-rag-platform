@@ -83,6 +83,27 @@ type BackendAskResponse = {
   claims: Array<{ claim: string; page: number; supported?: boolean | null }>;
 };
 
+type BackendExamQuestion = {
+  type?: string;
+  question?: string;
+  options?: string[];
+  answer?: string;
+  explanation?: string | null;
+  page?: number | null;
+  section?: string | null;
+};
+
+type BackendExamResponse = {
+  title: string;
+  questions: BackendExamQuestion[];
+  confidence: number;
+  hallucination_risk: number;
+  groundedness_score: number;
+  sources: number[];
+  evidence: BackendEvidence[];
+  raw?: Record<string, unknown>;
+};
+
 type BackendBuildResponse = {
   documents: Record<string, { filename?: string; page_count?: number; document_type?: string }>;
   chunk_count: number;
@@ -153,6 +174,14 @@ const mapAskResponse = (documentId: string, question: string, data: BackendAskRe
   };
 };
 
+const friendlyApiError = (error: unknown): Error => {
+  const message = error instanceof Error ? error.message : "Unexpected backend error.";
+  if (message.includes("Source index is not available") || message.includes("Build indexes")) {
+    return new Error("The server restarted and lost this source index. Please re-upload the PDF, then ask again.");
+  }
+  return new Error(message);
+};
+
 const documentFromUpload = (chatId: string, file: File, build: BackendBuildResponse): Document => {
   const meta = Object.values(build.documents)[0];
   const pages = meta?.page_count ?? Math.max(1, Math.round(file.size / 90_000));
@@ -181,6 +210,50 @@ const documentFromUpload = (chatId: string, file: File, build: BackendBuildRespo
     error: build.ready ? undefined : "Backend indexing did not complete.",
   };
 };
+
+const normalizeExamType = (type?: string): ExamQuestionType => {
+  if (type === "mcq") return "mcq";
+  if (type === "true_false" || type === "truefalse") return "truefalse";
+  return "short";
+};
+
+const isExamResponse = (data: BackendAskResponse | BackendExamResponse): data is BackendExamResponse =>
+  "questions" in data && Array.isArray(data.questions);
+
+const mapExamQuestions = (questions: BackendExamQuestion[], config: ExamConfig): ExamQuestion[] =>
+  questions
+    .filter((q) => q.question && q.answer)
+    .slice(0, config.count)
+    .map((q, index): ExamQuestion => {
+      const type = normalizeExamType(q.type);
+      const options =
+        type === "truefalse" ? q.options?.filter(Boolean).slice(0, 2) ?? ["True", "False"] : q.options?.filter(Boolean).slice(0, 5);
+      const answer = q.answer ?? "";
+      const answerLetter = answer.trim().match(/^[A-E]/i)?.[0]?.toUpperCase();
+      const answerLetterIndex = answerLetter ? "ABCDE".indexOf(answerLetter) : -1;
+      const answerTextIndex = options?.findIndex((option) => option.trim().toLowerCase() === answer.trim().toLowerCase()) ?? -1;
+      const correctIndex =
+        type === "truefalse"
+          ? /^true|صح|صحيح/i.test(answer)
+            ? 0
+            : 1
+          : answerTextIndex >= 0
+            ? answerTextIndex
+            : answerLetterIndex;
+
+      return {
+        id: `exam-q-${Date.now().toString(36)}-${index}`,
+        index: index + 1,
+        type,
+        prompt: q.question ?? "",
+        options: type === "short" ? undefined : options,
+        correctIndex: type === "short" || correctIndex < 0 ? undefined : correctIndex,
+        answer,
+        explanation: q.explanation ?? undefined,
+        difficulty: config.difficulty,
+        source: { page: q.page ?? 1, section: q.section ?? "Generated from source" },
+      };
+    });
 
 const parseExamQuestions = (answer: string, config: ExamConfig): ExamQuestion[] => {
   const jsonMatch = answer.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1] ?? answer.match(/\{[\s\S]*\}/)?.[0];
@@ -312,12 +385,16 @@ export const api = {
 
   async askQuestion(documentId: string, question: string): Promise<QueryResult> {
     const startedAt = Date.now();
-    const data = await requestJson<BackendAskResponse>("/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({ chat_id: documentId, query: question, verbose: false, use_memory: true }),
-    });
-    return mapAskResponse(documentId, question, data, startedAt);
+    try {
+      const data = await requestJson<BackendAskResponse>("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ chat_id: documentId, query: question, verbose: false, use_memory: true }),
+      });
+      return mapAskResponse(documentId, question, data, startedAt);
+    } catch (error) {
+      throw friendlyApiError(error);
+    }
   },
 
   async getAnalytics(): Promise<AnalyticsBundle> {
@@ -327,28 +404,53 @@ export const api = {
   async generateExam(config: ExamConfig, onStage?: (s: UploadStage) => void): Promise<GeneratedExam> {
     const doc = store.find((item) => item.id === config.documentId);
     onStage?.({ label: "Sending exam request to backend...", progress: 20 });
-    const data = await requestJson<BackendAskResponse>("/exam", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      body: JSON.stringify({
-        chat_id: config.documentId,
-        topic: config.focus,
-        difficulty: config.difficulty,
-        question_count: config.count,
-        total_marks: 100,
-        question_types: config.types.map((type) => (type === "truefalse" ? "true_false" : type)),
-        language: "ar",
-      }),
-    });
+    let data: BackendExamResponse | BackendAskResponse;
+    try {
+      data = await requestJson<BackendExamResponse | BackendAskResponse>("/exam", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({
+          chat_id: config.documentId,
+          topic: config.focus,
+          difficulty: config.difficulty,
+          question_count: config.count,
+          total_marks: 100,
+          question_types: config.types.map((type) => (type === "truefalse" ? "true_false" : type)),
+          language: "ar",
+        }),
+      });
+    } catch (error) {
+      throw friendlyApiError(error);
+    }
     onStage?.({ label: "Parsing grounded exam...", progress: 90 });
     await delay(120);
+    if (isExamResponse(data)) {
+      return {
+        id: `exam-${Date.now().toString(36)}`,
+        title: data.title,
+        documentId: config.documentId,
+        documentName: doc?.name ?? "Uploaded source",
+        config,
+        questions: mapExamQuestions(data.questions, config),
+        confidence: data.confidence,
+        hallucinationRisk: data.hallucination_risk,
+        groundednessScore: data.groundedness_score,
+        sources: data.sources,
+        generatedAt: new Date().toISOString(),
+      };
+    }
 
     return {
       id: `exam-${Date.now().toString(36)}`,
+      title: "Source-grounded exam",
       documentId: config.documentId,
       documentName: doc?.name ?? "Uploaded source",
       config,
       questions: parseExamQuestions(data.answer, config),
+      confidence: data.confidence,
+      hallucinationRisk: data.hallucination_risk,
+      groundednessScore: data.groundedness_score,
+      sources: data.sources,
       generatedAt: new Date().toISOString(),
     };
   },

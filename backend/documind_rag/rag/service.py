@@ -77,7 +77,10 @@ class RagService:
         """Answer a question using the built RAG indexes."""
 
         if not self.ready:
-            raise RuntimeError("RAG service is not ready. Build indexes first.")
+            raise RuntimeError(
+                "Source index is not available on this server instance. "
+                "Please re-upload the PDF after the latest deployment."
+            )
 
         pipeline = self.pipeline
         raw = pipeline.ask(

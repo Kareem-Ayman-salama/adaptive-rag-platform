@@ -184,10 +184,16 @@ export default function ExamStudioPage() {
     setExam(null);
     setShowKey(false);
     setStage({ label: "Starting...", progress: 4 });
-    const result = await api.generateExam(config, setStage);
-    setStage(null);
-    setExam(result);
-    toast(`Exam generated — ${result.questions.length} questions grounded to ${selectedDoc.name}.`);
+    try {
+      const result = await api.generateExam(config, setStage);
+      setExam(result);
+      toast(`Exam generated — ${result.questions.length} questions grounded to ${selectedDoc.name}.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not generate the exam.";
+      toast(message, "bad");
+    } finally {
+      setStage(null);
+    }
   };
 
   return (
@@ -442,11 +448,18 @@ export default function ExamStudioPage() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                   <div className="min-w-0">
                     <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-faint">Generated exam</p>
-                    <p className="mt-0.5 truncate font-display text-base font-semibold text-ink">{exam.documentName}</p>
+                    <p className="mt-0.5 truncate font-display text-base font-semibold text-ink">{exam.title}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-mut">{exam.documentName}</p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex max-w-full gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
                     <Badge tone="blue">{exam.questions.length} QUESTIONS</Badge>
                     <Badge tone="neutral">{exam.config.types.map((t) => TYPE_META[t].short).join(" + ")}</Badge>
+                    <Badge tone={exam.groundednessScore >= 0.75 ? "green" : "amber"}>
+                      GROUNDED {Math.round(exam.groundednessScore * 100)}%
+                    </Badge>
+                    <Badge tone={exam.hallucinationRisk <= 0.15 ? "green" : "amber"}>
+                      HALLUCINATION RISK {Math.round(exam.hallucinationRisk * 100)}%
+                    </Badge>
                     <span className={cn("rounded-md border px-2 py-0.5 font-mono text-[10px]", DIFF_META[exam.config.difficulty].cls)}>
                       {DIFF_META[exam.config.difficulty].label.toUpperCase()}
                     </span>
@@ -472,6 +485,11 @@ export default function ExamStudioPage() {
                 {exam.config.focus && (
                   <p className="mt-3 font-mono text-[11px] text-faint">
                     focus: <span className="text-vio">{exam.config.focus}</span>
+                  </p>
+                )}
+                {exam.sources.length > 0 && (
+                  <p className="mt-3 font-mono text-[11px] text-faint">
+                    evidence pages: <span className="text-acc">{exam.sources.slice(0, 8).join(", ")}</span>
                   </p>
                 )}
                 {exam.questions.length < exam.config.count && (

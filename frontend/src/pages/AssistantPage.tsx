@@ -309,14 +309,43 @@ export default function AssistantPage() {
       await sleep(i < 2 ? 520 : 400);
     }
 
-    const result = await api.askQuestion(documentId, q);
-    if (!adaptiveOn) result.selectedPipeline = "hybrid-multimodal";
-    setStages((s) => (s ? s.map((st) => ({ ...st, state: "done" as const })) : s));
-    await sleep(260);
-    setMessages((m) => [...m, { id: `a-${Date.now()}`, role: "assistant", result }]);
-    setStages(null);
-    setPendingAnalysis(null);
-    setActiveEvidenceId(result.evidence[0]?.id ?? null);
+    try {
+      const result = await api.askQuestion(documentId, q);
+      if (!adaptiveOn) result.selectedPipeline = "hybrid-multimodal";
+      setStages((s) => (s ? s.map((st) => ({ ...st, state: "done" as const })) : s));
+      await sleep(260);
+      setMessages((m) => [...m, { id: `a-${Date.now()}`, role: "assistant", result }]);
+      setActiveEvidenceId(result.evidence[0]?.id ?? null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not answer this question.";
+      toast(message, "bad");
+      setMessages((m) => [
+        ...m,
+        {
+          id: `a-${Date.now()}`,
+          role: "assistant",
+          result: {
+            id: `err-${Date.now().toString(36)}`,
+            question: q,
+            answer: message,
+            queryType: "text",
+            selectedPipeline: "hybrid-multimodal",
+            retrieval: "backend error",
+            rerankingEnabled: false,
+            confidence: 0,
+            evidenceStrength: "low",
+            evidence: [],
+            citations: [],
+            latencyMs: 0,
+            status: "error",
+            answeredAt: new Date().toISOString(),
+          },
+        },
+      ]);
+    } finally {
+      setStages(null);
+      setPendingAnalysis(null);
+    }
   };
 
   const currentEvidence = (() => {
@@ -468,12 +497,12 @@ export default function AssistantPage() {
                   The router classifies each question and picks the right retrieval pipeline — watch the trace above
                   every answer.
                 </p>
-                <div className="mt-7 grid w-full max-w-xl gap-2 sm:grid-cols-2">
+                <div className="mt-7 flex w-full max-w-full gap-2 overflow-x-auto pb-2 sm:grid sm:max-w-xl sm:grid-cols-2 sm:overflow-visible sm:pb-0">
                   {suggestedQuestions.map((q) => (
                     <button
                       key={q}
                       onClick={() => ask(q)}
-                      className="rounded-lg border border-line bg-panel2/70 px-4 py-3 text-left text-[13px] text-mut transition-all hover:-translate-y-0.5 hover:border-acc/40 hover:text-ink"
+                      className="min-w-[240px] rounded-lg border border-line bg-panel2/70 px-4 py-3 text-left text-[13px] text-mut transition-all hover:-translate-y-0.5 hover:border-acc/40 hover:text-ink sm:min-w-0"
                     >
                       {q}
                     </button>
@@ -492,7 +521,7 @@ export default function AssistantPage() {
                 {messages.map((m) =>
                   m.role === "user" ? (
                     <div key={m.id} className="anim-rise flex justify-end">
-                      <div className="max-w-[85%] rounded-xl rounded-br-sm border border-acc2/30 bg-acc2/10 px-4 py-3">
+                      <div className="max-w-[92%] rounded-xl rounded-br-sm border border-acc2/30 bg-acc2/10 px-4 py-3 sm:max-w-[85%]">
                         <p className="text-[14px] leading-relaxed text-ink">{m.question}</p>
                       </div>
                     </div>
