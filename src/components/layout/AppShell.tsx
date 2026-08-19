@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   BarChart3,
+  GraduationCap,
   Settings2,
   FileText,
   Sun,
@@ -62,6 +63,7 @@ function SidebarContent({
   const items: NavItem[] = [
     { to: nav.documents, label: "Overview", icon: LayoutDashboard },
     { to: nav.assistantFor(defaultDocumentId), label: "Assistant", icon: MessageSquare },
+    { to: nav.exams, label: "Exam Studio", icon: GraduationCap },
     { to: nav.analytics, label: "Analytics", icon: BarChart3 },
   ];
 

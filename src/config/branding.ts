@@ -16,6 +16,7 @@ export const nav = {
   landing: "/",
   documents: "/documents",
   analytics: "/analytics",
+  exams: "/exams",
   assistantFor: (documentId: string) => `/assistant/${documentId}`,
   workspaceFor: (documentId: string) => `/documents/${documentId}`,
 };

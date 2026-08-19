@@ -28,6 +28,11 @@ import {
   User,
   BarChart3,
   Workflow,
+  GraduationCap,
+  ListChecks,
+  KeyRound,
+  SlidersHorizontal,
+  Check,
 } from "lucide-react";
 import { branding, nav } from "../config/branding";
 import { Badge, Button, Card, Logo, Reveal, cn } from "../components/ui";
@@ -76,10 +81,10 @@ function Nav() {
 
   const links: Array<{ label: string; id: string }> = [
     { label: "Product", id: "product" },
-    { label: "How It Works", id: "how" },
+    { label: "Exams", id: "exams" },
     { label: "Architecture", id: "architecture" },
     { label: "Capabilities", id: "capabilities" },
-    { label: "Demo", id: "demo" },
+    { label: "Team", id: "team" },
   ];
 
   return (
@@ -246,9 +251,14 @@ function Hero() {
       <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.05fr_0.95fr]">
         <div>
           <Reveal>
-            <Badge tone="cyan">
-              <Workflow className="w-3.5 h-3.5" /> Adaptive Multimodal RAG
-            </Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone="cyan">
+                <Workflow className="w-3.5 h-3.5" /> Adaptive Multimodal RAG
+              </Badge>
+              <Badge tone="violet">
+                <GraduationCap className="w-3.5 h-3.5" /> NEW · Exam Generation
+              </Badge>
+            </div>
           </Reveal>
           <Reveal delay={80}>
             <h1 className="mt-5 font-display text-[40px] leading-[1.05] sm:text-6xl font-bold tracking-tight text-ink">
@@ -450,6 +460,180 @@ function Capabilities() {
                 <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em]" style={{ color: c.color }}>
                   {c.tag}
                 </p>
+              </Card>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------- exam studio ----------------------------- */
+
+function ExamSection() {
+  const navigate = useNavigate();
+  const bullets = [
+    { icon: GraduationCap, title: "Built for educators", desc: "Professors, TAs, trainers — anyone turning a source into an exam.", color: "var(--vio)" },
+    { icon: ListChecks, title: "Mixed question formats", desc: "MCQ, true/false and short answer, drafted from indexed evidence.", color: "var(--acc2)" },
+    { icon: KeyRound, title: "Answer key included", desc: "Every answer is grounded to the exact page and section it came from.", color: "var(--ok)" },
+    { icon: SlidersHorizontal, title: "You stay in control", desc: "Set difficulty, question count, formats and an optional topic focus.", color: "var(--acc)" },
+  ];
+  return (
+    <section id="exams" className="relative py-24">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_20%_40%,color-mix(in_oklab,var(--vio)_8%,transparent),transparent_70%)]" />
+      <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-2">
+        <div>
+          <Reveal>
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-vio">New · Exam Intelligence</p>
+            <h2 className="mt-3 font-display text-3xl sm:text-4xl font-bold tracking-tight text-ink">
+              Turn any source into a <span className="text-vio">ready exam.</span>
+            </h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-mut">
+              The same document intelligence that answers questions can also <span className="text-ink font-medium">write the exam</span>.
+              Point it at a lecture, a paper, or a manual — get questions with a grounded answer key, not guesswork.
+            </p>
+          </Reveal>
+          <div className="mt-8 space-y-5">
+            {bullets.map((b, i) => (
+              <Reveal key={b.title} delay={i * 90}>
+                <div className="flex items-start gap-4">
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border"
+                    style={{
+                      color: b.color,
+                      borderColor: `color-mix(in oklab, ${b.color} 30%, transparent)`,
+                      background: `color-mix(in oklab, ${b.color} 10%, transparent)`,
+                    }}
+                  >
+                    <b.icon className="w-[18px] h-[18px]" />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-[15px] font-semibold text-ink">{b.title}</h3>
+                    <p className="mt-1 text-[13px] leading-relaxed text-mut">{b.desc}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal delay={360}>
+            <div className="mt-9">
+              <Button size="lg" onClick={() => navigate(nav.exams)}>
+                Open Exam Studio <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+          </Reveal>
+        </div>
+
+        <Reveal delay={200}>
+          <div className="relative">
+            <div className="absolute -inset-6 rounded-[28px] bg-[radial-gradient(ellipse_at_center,color-mix(in_oklab,var(--vio)_12%,transparent),transparent_65%)]" />
+            <Card className="relative overflow-hidden">
+              <div className="flex items-center justify-between border-b border-line px-5 py-3.5">
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-faint">exam-studio · generated</p>
+                <span className="flex items-center gap-1.5 font-mono text-[11px] text-ok">
+                  <KeyRound className="w-3 h-3" /> key grounded
+                </span>
+              </div>
+              <div className="space-y-4 p-5">
+                <div className="flex flex-wrap gap-1.5">
+                  {["8 questions", "MCQ + True/False", "Medium"].map((c) => (
+                    <span key={c} className="rounded-md border border-line bg-inset px-2 py-1 font-mono text-[10px] text-faint">{c}</span>
+                  ))}
+                </div>
+
+                <div className="rounded-lg border border-line bg-panel2/60 p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-vio">Q1 · Multiple choice</p>
+                  <p className="mt-2 text-[13px] font-medium text-ink">
+                    Which retrieval configuration sustained the highest throughput under the 200 ms budget?
+                  </p>
+                  <div className="mt-3 space-y-1.5">
+                    {["Keyword-only search", "Adaptive hybrid pipeline", "Text-only dense retrieval"].map((o, i) => (
+                      <div
+                        key={o}
+                        className={cn(
+                          "flex items-center justify-between rounded-md border px-3 py-1.5 text-[12px]",
+                          i === 1 ? "border-ok/40 bg-ok/5 text-ink" : "border-line bg-inset text-mut"
+                        )}
+                      >
+                        <span>
+                          <span className="mr-2 font-mono text-[10px] text-faint">{String.fromCharCode(65 + i)}</span>
+                          {o}
+                        </span>
+                        {i === 1 && <Check className="w-3.5 h-3.5 text-ok" />}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2.5 font-mono text-[10px] text-faint">src · Page 12 · Figure 3</p>
+                </div>
+
+                <div className="rounded-lg border border-line bg-panel2/60 p-4">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-vio">Q2 · True / false</p>
+                  <p className="mt-2 text-[13px] font-medium text-ink">
+                    Table-aware parsing preserves header relationships lost by flat text extraction.
+                  </p>
+                  <div className="mt-3 flex gap-1.5">
+                    <span className="flex items-center gap-1.5 rounded-md border border-ok/40 bg-ok/5 px-3 py-1.5 text-[12px] text-ink">
+                      True <Check className="w-3 h-3 text-ok" />
+                    </span>
+                    <span className="rounded-md border border-line bg-inset px-3 py-1.5 text-[12px] text-mut">False</span>
+                  </div>
+                  <p className="mt-2.5 font-mono text-[10px] text-faint">src · Page 18 · Table 4</p>
+                </div>
+              </div>
+            </Card>
+            <div className="floaty absolute -right-6 top-16 hidden xl:flex items-center gap-2 rounded-lg border border-line bg-panel2 px-3 py-2 shadow-xl">
+              <GraduationCap className="w-3.5 h-3.5 text-vio" />
+              <span className="font-mono text-[11px] text-mut">for educators</span>
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------- team -------------------------------- */
+
+function TeamSection() {
+  const members = [
+    { name: "Kareem Ayman", initials: "KA", from: "var(--acc2)", to: "var(--acc)" },
+    { name: "Jana Ashraf", initials: "JA", from: "var(--vio)", to: "var(--acc2)" },
+    { name: "Sama Hany", initials: "SH", from: "var(--ok)", to: "var(--acc)" },
+    { name: "Sara Elsafty", initials: "SE", from: "var(--warn)", to: "var(--vio)" },
+  ];
+  return (
+    <section id="team" className="relative py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <Reveal>
+          <SectionHead
+            kicker="The builders"
+            title={
+              <>
+                Team <span className="text-acc">Kemet AI</span>
+              </>
+            }
+            desc="Named after Kemet — the ancient name of Egypt, the black land. We build document intelligence for the next era of knowledge."
+          />
+        </Reveal>
+        <div className="mx-auto mt-14 grid max-w-4xl grid-cols-2 gap-4 lg:grid-cols-4">
+          {members.map((m, i) => (
+            <Reveal key={m.name} delay={i * 90}>
+              <Card hover className="group relative overflow-hidden p-6 text-center">
+                <div
+                  className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-[0.08] transition-opacity duration-300 group-hover:opacity-[0.16]"
+                  style={{ background: m.from }}
+                />
+                <div className="relative mx-auto w-fit rounded-2xl border border-line2 p-1.5 transition-transform duration-300 group-hover:-rotate-2 group-hover:scale-105">
+                  <span
+                    className="flex h-16 w-16 items-center justify-center rounded-xl font-display text-xl font-bold text-white"
+                    style={{ background: `linear-gradient(135deg, ${m.from}, ${m.to})` }}
+                  >
+                    {m.initials}
+                  </span>
+                </div>
+                <p className="mt-4 font-display text-[15px] font-semibold text-ink">{m.name}</p>
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-faint">Kemet AI</p>
               </Card>
             </Reveal>
           ))}
@@ -735,9 +919,14 @@ function Footer() {
           </div>
         </div>
         <div className="fade-rule mt-10" />
-        <p className="mt-6 text-center font-mono text-[11px] text-faint">
-          © 2025 {branding.name} — built for the Advanced Multimodal RAG Hackathon. All metrics shown are sample data.
-        </p>
+        <div className="mt-6 space-y-2 text-center">
+          <p className="font-mono text-[11px] text-faint">
+            © 2025 {branding.name} — built for the Advanced Multimodal RAG Hackathon. All metrics shown are sample data.
+          </p>
+          <p className="font-mono text-[11px] text-mut">
+            Crafted by <span className="font-semibold text-acc">Team Kemet AI</span> — Kareem Ayman · Jana Ashraf · Sama Hany · Sara Elsafty
+          </p>
+        </div>
       </div>
     </footer>
   );
@@ -751,10 +940,12 @@ export default function LandingPage() {
       <Nav />
       <Hero />
       <Comparison />
+      <ExamSection />
       <Capabilities />
       <Architecture />
       <HowItWorks />
       <DemoCta />
+      <TeamSection />
       <Footer />
     </div>
   );

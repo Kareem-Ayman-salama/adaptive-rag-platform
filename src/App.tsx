@@ -8,6 +8,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import DocumentWorkspacePage from "./pages/DocumentWorkspacePage";
 import AssistantPage from "./pages/AssistantPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import ExamStudioPage from "./pages/ExamStudioPage";
 import { Toaster } from "./components/ui";
 import { defaultDocumentId, nav } from "./config/branding";
 
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:documentId" element={<DocumentWorkspacePage />} />
           <Route path="/assistant/:documentId" element={<AssistantPage />} />
+          <Route path="/exams" element={<ExamStudioPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
         </Route>
         <Route path="/assistant" element={<Navigate to={nav.assistantFor(defaultDocumentId)} replace />} />

@@ -136,6 +136,42 @@ export interface AnalyticsBundle {
   services: SystemService[];
 }
 
+/* ------------------------------- exam studio ------------------------------ */
+
+export type ExamQuestionType = "mcq" | "truefalse" | "short";
+
+export type ExamDifficulty = "easy" | "medium" | "hard";
+
+export interface ExamConfig {
+  documentId: string;
+  count: number;
+  types: ExamQuestionType[];
+  difficulty: ExamDifficulty;
+  focus?: string;
+}
+
+export interface ExamQuestion {
+  id: string;
+  index: number;
+  type: ExamQuestionType;
+  prompt: string;
+  options?: string[];
+  correctIndex?: number;
+  answer: string;
+  explanation?: string;
+  difficulty: ExamDifficulty;
+  source: { page: number; section: string };
+}
+
+export interface GeneratedExam {
+  id: string;
+  documentId: string;
+  documentName: string;
+  config: ExamConfig;
+  questions: ExamQuestion[];
+  generatedAt: string;
+}
+
 /* ---------------------------- assistant UI ---------------------------- */
 
 export interface ChatMessage {

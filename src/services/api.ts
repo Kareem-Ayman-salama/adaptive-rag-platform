@@ -1,6 +1,15 @@
-import type { AnalyticsBundle, DashboardStats, Document, QueryResult, UploadStage } from "../types";
+import type {
+  AnalyticsBundle,
+  DashboardStats,
+  Document,
+  ExamConfig,
+  GeneratedExam,
+  QueryResult,
+  UploadStage,
+} from "../types";
 import { seedDocuments, processingStages, reprocessStages } from "../mock/documents";
 import { matchQuery } from "../mock/queries";
+import { pickQuestions } from "../mock/exams";
 import { analyticsBundle, dashboardStats } from "../mock/analytics";
 
 /**
@@ -127,5 +136,36 @@ export const api = {
   async getAnalytics(): Promise<AnalyticsBundle> {
     await delay(600);
     return analyticsBundle;
+  },
+
+  /* ------------------------------ exam studio ----------------------------- */
+
+  /**
+   * Simulated exam generation from a document's indexed evidence.
+   * Swap for a real POST /exams/generate when the backend is ready.
+   */
+  async generateExam(config: ExamConfig, onStage?: (s: UploadStage) => void): Promise<GeneratedExam> {
+    const doc = store.find((d) => d.id === config.documentId);
+    const stages = [
+      "Analyzing source document...",
+      "Extracting key concepts...",
+      "Drafting questions...",
+      "Writing answer key...",
+      "Grounding questions to evidence...",
+    ];
+    for (let i = 0; i < stages.length; i++) {
+      onStage?.({ label: stages[i], progress: Math.round(((i + 1) / stages.length) * 92) });
+      await delay(640);
+    }
+    onStage?.({ label: "Exam ready", progress: 100 });
+    await delay(220);
+    return {
+      id: `exam-${Date.now().toString(36)}`,
+      documentId: config.documentId,
+      documentName: doc?.name ?? "Unknown document",
+      config,
+      questions: pickQuestions(config, doc?.name ?? ""),
+      generatedAt: new Date().toISOString(),
+    };
   },
 };
