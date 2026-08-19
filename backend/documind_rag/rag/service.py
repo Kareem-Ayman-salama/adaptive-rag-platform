@@ -227,16 +227,28 @@ Total marks: {total_marks}
 Question types: {", ".join(question_types)}
 
 Output format:
-1. Exam title
-2. Instructions
-3. Questions grouped by type
-4. Mark for each question
-5. Answer key / rubric
+Return ONLY valid JSON with this exact shape:
+{{
+  "title": "string",
+  "questions": [
+    {{
+      "type": "mcq | true_false | short_answer",
+      "question": "string",
+      "options": ["string", "string", "string", "string"],
+      "answer": "string",
+      "explanation": "string",
+      "page": 1,
+      "section": "string"
+    }}
+  ]
+}}
 
 Rules:
 - Use only the uploaded source.
 - Do not add facts from outside the source.
 - Cite source pages where relevant.
+- Generate real assessment questions, not exam instructions.
+- Do not include preamble, markdown fences, or commentary outside JSON.
 - {lang_instruction}
 """
         return self.ask(query, chat_id=chat_id, use_memory=False, verbose=False)

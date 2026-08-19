@@ -183,20 +183,77 @@ const documentFromUpload = (chatId: string, file: File, build: BackendBuildRespo
 };
 
 const parseExamQuestions = (answer: string, config: ExamConfig): ExamQuestion[] => {
+  const jsonMatch = answer.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1] ?? answer.match(/\{[\s\S]*\}/)?.[0];
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch) as {
+        questions?: Array<{
+          type?: string;
+          question?: string;
+          options?: string[];
+          answer?: string;
+          explanation?: string;
+          page?: number;
+          section?: string;
+        }>;
+      };
+      const questions = (parsed.questions ?? [])
+        .filter((q) => q.question && q.answer)
+        .slice(0, config.count)
+        .map((q, index): ExamQuestion => {
+          const type: ExamQuestionType =
+            q.type === "mcq" ? "mcq" : q.type === "true_false" || q.type === "truefalse" ? "truefalse" : "short";
+          const options = type === "truefalse" ? ["True", "False"] : q.options?.filter(Boolean).slice(0, 5);
+          const correctIndex =
+            type === "truefalse"
+              ? /^true|صح|صحيح/i.test(q.answer ?? "")
+                ? 0
+                : 1
+              : options?.findIndex((option) => option.toLowerCase() === (q.answer ?? "").toLowerCase());
+          return {
+            id: `exam-q-${Date.now().toString(36)}-${index}`,
+            index: index + 1,
+            type,
+            prompt: q.question ?? "",
+            options: type === "short" ? undefined : options,
+            correctIndex: type === "short" ? undefined : Math.max(0, correctIndex ?? 0),
+            answer: q.answer ?? "",
+            explanation: q.explanation,
+            difficulty: config.difficulty,
+            source: { page: q.page ?? 1, section: q.section ?? "Generated from source" },
+          };
+        });
+      if (questions.length > 0) return questions;
+    } catch {
+      // Fall through to plain-text parsing when the model returns invalid JSON.
+    }
+  }
+
   const lines = answer.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-  const questionLines = lines.filter((line) => /^(\d+[\).\-\s]|Q\d+)/i.test(line));
+  const instructionPatterns = [
+    /^(exam title|instructions?|answer key|rubric|model answer)/i,
+    /اقرأ|لا تستخدم|أجب على|اكتب إجاباتك|كل سؤال|تعليمات/i,
+  ];
+  const questionLines = lines.filter(
+    (line) =>
+      /^(\d+[\).\-\s]|Q\d+)/i.test(line) &&
+      /[؟?]/.test(line) &&
+      !instructionPatterns.some((pattern) => pattern.test(line))
+  );
   const selected = (questionLines.length ? questionLines : lines).slice(0, config.count);
 
-  return selected.map((line, index) => ({
-    id: `exam-q-${Date.now().toString(36)}-${index}`,
-    index: index + 1,
-    type: "short" as ExamQuestionType,
-    prompt: line.replace(/^(\d+[\).\-\s]|Q\d+[:.\-\s]*)/i, ""),
-    answer: "See generated answer key in the backend response.",
-    explanation: "Generated from the uploaded source and grounded through the RAG pipeline.",
-    difficulty: config.difficulty,
-    source: { page: 1, section: "Generated from source" },
-  }));
+  return selected
+    .filter((line) => /[؟?]/.test(line) && !instructionPatterns.some((pattern) => pattern.test(line)))
+    .map((line, index) => ({
+      id: `exam-q-${Date.now().toString(36)}-${index}`,
+      index: index + 1,
+      type: "short" as ExamQuestionType,
+      prompt: line.replace(/^(\d+[\).\-\s]|Q\d+[:.\-\s]*)/i, ""),
+      answer: "See generated answer key in the backend response.",
+      explanation: "Generated from the uploaded source and grounded through the RAG pipeline.",
+      difficulty: config.difficulty,
+      source: { page: 1, section: "Generated from source" },
+    }));
 };
 
 export const api = {
