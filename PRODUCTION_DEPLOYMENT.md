@@ -4,7 +4,7 @@ This repository is structured as a production-oriented monorepo:
 
 ```text
 adaptive-rag-platform/
-  src/                 # React/Vite frontend
+  frontend/            # React/Vite frontend for Railway
   backend/             # FastAPI backend for Railway
     documind_rag/
       app/
@@ -47,6 +47,12 @@ GET /health
 ```
 
 ## Frontend
+
+Create a separate Railway service with root directory:
+
+```text
+frontend
+```
 
 Set the backend URL:
 

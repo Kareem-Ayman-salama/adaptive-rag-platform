@@ -7,7 +7,7 @@ evidence grounding, hallucination checks, and exam generation.
 
 ```text
 adaptive-rag-platform/
-  src/                 # React + Vite frontend
+  frontend/            # React + Vite frontend deployable on Railway
   backend/             # FastAPI backend deployable on Railway
     documind_rag/
       app/
@@ -38,6 +38,7 @@ DOCUMIND_AUTO_BUILD=false
 ## Frontend
 
 ```powershell
+cd frontend
 npm install
 npm run dev
 ```
@@ -54,6 +55,12 @@ Railway backend root directory:
 
 ```text
 backend
+```
+
+Railway frontend root directory:
+
+```text
+frontend
 ```
 
 See [PRODUCTION_DEPLOYMENT.md](./PRODUCTION_DEPLOYMENT.md).
