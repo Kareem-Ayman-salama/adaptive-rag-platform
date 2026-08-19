@@ -9,12 +9,36 @@ from typing import Any
 from documind_rag.app.schemas import (
     AskResponse,
     BuildResponse,
+    ClaimItem,
     EvidenceItem,
     HealthResponse,
     QueryFilters,
     QueryMetadata,
     ChatMessage,
 )
+
+
+def _looks_arabic(text: str) -> bool:
+    """Return whether the text contains Arabic characters."""
+
+    return any("\u0600" <= char <= "\u06ff" for char in text)
+
+
+def _source_only_refusal(query: str, language: str) -> str:
+    """Return a domain-aware refusal when evidence is not in the PDF."""
+
+    is_arabic = language == "ar" or _looks_arabic(query)
+    if is_arabic:
+        return (
+            "المصدر المرفوع لا يحتوي على معلومات كافية لدعم إجابة موثوقة. "
+            "لو السؤال طبي فالأفضل استشارة طبيب، ولو في مجال آخر فاستشر متخصصًا "
+            "مؤهلًا في نفس المجال أو ارفع مصدرًا أوضح."
+        )
+    return (
+        "The uploaded PDF does not contain enough evidence for a reliable answer. "
+        "If this is a medical question, please consult a doctor; otherwise consult "
+        "a qualified specialist in the relevant field or upload a clearer source."
+    )
 
 
 @dataclass
@@ -105,6 +129,27 @@ class RagService:
             filters=QueryFilters(**filters),
             search_queries=query_info.get("search_queries", []),
         )
+        answer = raw.get("answer", "")
+        evidence_rows = raw.get("evidence", [])
+        raw_confidence = float(raw.get("confidence", 0.0))
+        sources = raw.get("sources", [])
+        insufficient = not evidence_rows or not sources
+        if insufficient:
+            answer = _source_only_refusal(query, metadata.language)
+            raw["answer"] = answer
+            raw["confidence"] = min(raw_confidence, 0.1)
+            raw["sources"] = []
+            raw["evidence"] = []
+            raw["claims"] = [
+                {
+                    "claim": answer,
+                    "page": 0,
+                    "supported": False,
+                    "score": 0.0,
+                    "note": "Answer refused because the uploaded source did not provide sufficient evidence.",
+                }
+            ]
+
         claims = raw.get("claims", [])
         checked_claims = [
             claim
@@ -120,9 +165,28 @@ class RagService:
             else (1.0 if raw.get("answer") and not raw.get("evidence") else 0.0)
         )
         groundedness_score = max(0.0, 1.0 - hallucination_risk)
+        if checked_claims and hallucination_risk >= 0.5:
+            answer = _source_only_refusal(query, metadata.language)
+            raw["answer"] = answer
+            raw["confidence"] = min(raw_confidence, 0.1)
+            raw["sources"] = []
+            raw["evidence"] = []
+            claims = [
+                {
+                    "claim": answer,
+                    "page": 0,
+                    "supported": False,
+                    "score": 0.0,
+                    "note": "Answer refused because generated claims were not sufficiently supported by the uploaded source.",
+                }
+            ]
+            raw["claims"] = claims
+            unsupported_claims = 1
+            hallucination_risk = 1.0
+            groundedness_score = 0.0
 
         return AskResponse(
-            answer=raw.get("answer", ""),
+            answer=answer,
             query=metadata,
             confidence=float(raw.get("confidence", 0.0)),
             hallucination_risk=float(hallucination_risk),
@@ -130,7 +194,7 @@ class RagService:
             unsupported_claims=unsupported_claims,
             sources=raw.get("sources", []),
             evidence=[EvidenceItem(**item) for item in raw.get("evidence", [])],
-            claims=claims,
+            claims=[ClaimItem(**claim) if isinstance(claim, dict) else claim for claim in claims],
             sub_questions=raw.get("sub_questions", []),
             raw=raw,
         )

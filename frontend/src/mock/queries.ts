@@ -3,16 +3,13 @@ import { evidenceSets } from "./evidence";
 
 /** Suggested questions shown in the assistant empty state. */
 export const suggestedQuestions = [
-  "Summarize the main findings.",
-  "What does the chart on page 12 show?",
-  "What values are listed in the comparison table?",
-  "Explain the architecture diagram.",
-  "What conclusion does the report reach?",
-  "Compare information across two sections.",
+  "Summarize the uploaded PDF using only its content.",
+  "What are the key points mentioned in this source?",
+  "List the important terms or concepts from the PDF.",
+  "What recommendations or conclusions are stated in the source?",
+  "Create questions from the uploaded PDF only.",
+  "Which pages support the main answer?",
 ];
-
-/** One deliberately unanswerable question used to demo the safety state. */
-export const unanswerableExample = "What is tomorrow's weather forecast?";
 
 const insufficientTriggers = [
   "weather",

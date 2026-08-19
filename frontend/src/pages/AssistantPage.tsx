@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { api } from "../services/api";
 import { nav } from "../config/branding";
-import { matchQuery, suggestedQuestions, unanswerableExample } from "../mock/queries";
+import { matchQuery, suggestedQuestions } from "../mock/queries";
 import type { ChatMessage, Document, Evidence, QueryResult, RetrievalStageState } from "../types";
 import {
   Badge,
@@ -108,8 +108,8 @@ function InsufficientCard({ result }: { result: QueryResult }) {
         <div>
           <h4 className="font-display text-base font-semibold text-ink">Insufficient Evidence</h4>
           <p className="mt-1.5 max-w-xl text-[13px] leading-relaxed text-mut">
-            The retrieved document evidence does not provide enough information to answer this question reliably.
-            Rather than guess, the system withholds an answer.
+            {result.answer ||
+              "The retrieved document evidence does not provide enough information to answer this question reliably. Rather than guess, the system withholds an answer."}
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2">
             <Badge tone="red">EVIDENCE STRENGTH · LOW</Badge>
@@ -508,13 +508,10 @@ export default function AssistantPage() {
                     </button>
                   ))}
                 </div>
-                <button
-                  onClick={() => ask(unanswerableExample)}
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-warn/30 bg-warn/5 px-4 py-2.5 text-[12px] text-warn transition-colors hover:bg-warn/10"
-                >
+                <p className="mt-3 inline-flex items-center gap-2 rounded-lg border border-warn/30 bg-warn/5 px-4 py-2.5 text-[12px] text-warn">
                   <AlertTriangle className="w-3.5 h-3.5" />
-                  Try an unanswerable question — “{unanswerableExample}”
-                </button>
+                  Answers are limited to the uploaded PDF. Missing topics are refused instead of guessed.
+                </p>
               </div>
             ) : (
               <div className="space-y-6">

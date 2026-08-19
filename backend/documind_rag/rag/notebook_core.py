@@ -3255,7 +3255,8 @@ def _system_prompt(
 
         refuse_msg = (
             "المصدر المرفوع لا يحتوي على معلومات كافية لدعم إجابة مؤكدة. "
-            "راجع طبيبًا أو متخصصًا مؤهلًا، أو أرفق مصدرًا أوضح."
+            "لو السؤال طبي فاستشر طبيبًا، ولو في مجال آخر فاستشر متخصصًا "
+            "مؤهلًا في نفس المجال أو أرفق مصدرًا أوضح."
         )
 
     else:
@@ -3266,8 +3267,9 @@ def _system_prompt(
 
         refuse_msg = (
             "The uploaded source does not contain enough evidence for a reliable "
-            "answer. Please consult a qualified doctor or specialist, or upload "
-            "a clearer source."
+            "answer. If this is medical, please consult a doctor; otherwise "
+            "consult a qualified specialist in the relevant field or upload a "
+            "clearer source."
         )
 
     prompt = f"""
@@ -4210,15 +4212,17 @@ def ask(
     refuse_msg = (
 
         "المصدر المرفوع لا يحتوي على معلومات كافية لدعم إجابة مؤكدة. "
-        "راجع طبيبًا أو متخصصًا مؤهلًا، أو أرفق مصدرًا أوضح."
+        "لو السؤال طبي فاستشر طبيبًا، ولو في مجال آخر فاستشر متخصصًا "
+        "مؤهلًا في نفس المجال أو أرفق مصدرًا أوضح."
 
         if lang == "ar"
 
         else
 
         "The uploaded source does not contain enough evidence for a reliable "
-        "answer. Please consult a qualified doctor or specialist, or upload "
-        "a clearer source."
+        "answer. If this is medical, please consult a doctor; otherwise "
+        "consult a qualified specialist in the relevant field or upload a "
+        "clearer source."
 
     )
 
