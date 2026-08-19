@@ -1,7 +1,9 @@
 import { useEffect } from "react";
 import { HashRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import AppShell from "./components/layout/AppShell";
+import RequireAuth from "./components/layout/RequireAuth";
 import LandingPage from "./pages/LandingPage";
+import AuthPage from "./pages/AuthPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import DocumentWorkspacePage from "./pages/DocumentWorkspacePage";
 import AssistantPage from "./pages/AssistantPage";
@@ -23,7 +25,14 @@ export default function App() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route element={<AppShell />}>
+        <Route path="/login" element={<AuthPage />} />
+        <Route
+          element={
+            <RequireAuth>
+              <AppShell />
+            </RequireAuth>
+          }
+        >
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/documents/:documentId" element={<DocumentWorkspacePage />} />
           <Route path="/assistant/:documentId" element={<AssistantPage />} />

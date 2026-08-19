@@ -18,6 +18,9 @@ import {
   Route as RouteIcon,
   Search,
   AlertTriangle,
+  Mic,
+  Paperclip,
+  ArrowLeftRight,
 } from "lucide-react";
 import { api } from "../services/api";
 import { nav } from "../config/branding";
@@ -29,13 +32,16 @@ import {
   Card,
   EmptyState,
   LogoMark,
+  Modal,
   PipelineBadge,
   QueryTypeBadge,
   Skeleton,
   Tip,
   cn,
   formatMs,
+  toast,
 } from "../components/ui";
+import UploadZone from "../components/documents/UploadZone";
 import { EvidenceCard, EvidenceListSkeleton, EvidencePreviewModal } from "../components/assistant/EvidencePanel";
 
 const STAGE_LABELS = [
@@ -255,6 +261,15 @@ export default function AssistantPage() {
   const [preview, setPreview] = useState<Evidence | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<QueryResult | null>(null);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+
+  const readyDocs = api.getDocumentsSync().filter((d) => d.status === "ready");
+
+  const switchSource = (id: string, label?: string) => {
+    navigate(nav.assistantFor(id));
+    setSourcesOpen(false);
+    if (label) toast(`Now asking ${label}.`, "info");
+  };
   const scrollRef = useRef<HTMLDivElement>(null);
   const busy = stages !== null;
 
@@ -263,6 +278,11 @@ export default function AssistantPage() {
     setDoc(null);
     setMessages([]);
     setStages(null);
+    setPendingAnalysis(null);
+    setActiveEvidenceId(null);
+    setPreview(null);
+    setDrawerOpen(false);
+    setInput("");
     if (!documentId) return;
     api.getDocument(documentId).then((d) => live && setDoc(d ?? "missing"));
     return () => {
@@ -375,6 +395,14 @@ export default function AssistantPage() {
                 <span className="truncate">{doc.name}</span>
               </span>
             )}
+            <Tip label="Switch source or upload a new PDF">
+              <button
+                onClick={() => setSourcesOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border border-line bg-panel px-2 py-1 font-mono text-[11px] text-mut transition-colors hover:border-acc/40 hover:text-acc"
+              >
+                <ArrowLeftRight className="w-3 h-3" /> Sources
+              </button>
+            </Tip>
           </div>
         </div>
         <div className="ml-auto flex items-center gap-3">
@@ -501,6 +529,26 @@ export default function AssistantPage() {
                 disabled={busy || doc === null}
                 className="h-12 flex-1 rounded-xl border border-line bg-inset px-4 text-sm text-ink placeholder:text-faint outline-none transition-colors focus:border-acc/50 focus:bg-panel disabled:opacity-50"
               />
+              <Tip label="Ask by voice — coming soon">
+                <button
+                  type="button"
+                  aria-label="Voice input (coming soon)"
+                  onClick={() => toast("Voice input is coming soon — type your question for now.", "info")}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-line bg-panel text-mut transition-all hover:border-vio/40 hover:text-vio active:scale-95"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              </Tip>
+              <Tip label="Attach a new source PDF">
+                <button
+                  type="button"
+                  aria-label="Attach source document"
+                  onClick={() => setSourcesOpen(true)}
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-line bg-panel text-mut transition-all hover:border-acc/40 hover:text-acc active:scale-95"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+              </Tip>
               <Tip label="Send question (Enter)">
                 <Button type="submit" disabled={busy || !input.trim() || doc === null} className="h-12 w-12 px-0">
                   <Send className="w-4 h-4" />
@@ -546,6 +594,53 @@ export default function AssistantPage() {
       )}
 
       <EvidencePreviewModal ev={preview} onClose={() => setPreview(null)} />
+
+      {/* sources modal */}
+      <Modal open={sourcesOpen} onClose={() => setSourcesOpen(false)} title="Question source" wide>
+        <p className="text-sm text-mut">
+          Choose which document the assistant retrieves evidence from — or drop a new PDF right here and it joins the
+          conversation instantly.
+        </p>
+        <div className="mt-4 space-y-2">
+          {readyDocs.map((d) => {
+            const current = d.id === documentId;
+            return (
+              <button
+                key={d.id}
+                onClick={() => switchSource(d.id, d.name)}
+                className={cn(
+                  "flex w-full items-center gap-3.5 rounded-lg border px-4 py-3 text-left transition-all",
+                  current
+                    ? "border-acc/50 bg-acc/5"
+                    : "border-line bg-inset hover:border-line2 hover:bg-panel2"
+                )}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-panel2">
+                  <FileText className="w-4 h-4 text-acc2" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-ink">{d.name}</span>
+                  <span className="block font-mono text-[11px] text-faint">
+                    {d.pages} pages · ready · mock evidence
+                  </span>
+                </span>
+                {current ? (
+                  <Badge tone="cyan">ACTIVE</Badge>
+                ) : (
+                  <span className="font-mono text-[11px] text-faint">switch</span>
+                )}
+              </button>
+            );
+          })}
+          {readyDocs.length === 0 && (
+            <p className="rounded-lg border border-dashed border-line px-4 py-6 text-center text-sm text-faint">
+              No ready documents yet — upload one below.
+            </p>
+          )}
+        </div>
+        <div className="fade-rule my-5" />
+        <UploadZone compact onUploaded={(d) => switchSource(d.id, d.name)} />
+      </Modal>
     </div>
   );
 }

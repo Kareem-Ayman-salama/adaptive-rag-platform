@@ -13,11 +13,13 @@ import {
   Menu,
   X,
   RotateCcw,
+  LogOut,
 } from "lucide-react";
 import { api, DOCS_CHANGED_EVENT } from "../../services/api";
+import { auth, initialsOf, type AuthUser } from "../../services/auth";
 import { branding, defaultDocumentId, nav } from "../../config/branding";
 import type { Document } from "../../types";
-import { Badge, Button, Logo, LogoMark, Modal, Tip, cn, useClickOutside } from "../ui";
+import { Badge, Button, Logo, LogoMark, Modal, Tip, cn, toast, useClickOutside } from "../ui";
 
 function useTheme() {
   const [theme, setTheme] = useState<string>(
@@ -45,13 +47,17 @@ interface NavItem {
 function SidebarContent({
   collapsed,
   docs,
+  user,
   onNavigate,
   onSettings,
+  onSignOut,
 }: {
   collapsed: boolean;
   docs: Document[];
+  user: AuthUser | null;
   onNavigate?: () => void;
   onSettings: () => void;
+  onSignOut: () => void;
 }) {
   const items: NavItem[] = [
     { to: nav.documents, label: "Overview", icon: LayoutDashboard },
@@ -141,6 +147,44 @@ function SidebarContent({
           <Settings2 className="w-[18px] h-[18px] shrink-0" />
           {!collapsed && "Settings"}
         </button>
+
+        {user && (
+          <div
+            className={cn(
+              "flex items-center gap-2.5 rounded-lg border border-line bg-inset px-2.5 py-2.5",
+              collapsed && "justify-center border-0 bg-transparent px-0"
+            )}
+          >
+            {collapsed ? (
+              <Tip label={`${user.name} — sign out`}>
+                <button onClick={onSignOut} aria-label="Sign out" className="rounded-full transition-transform hover:scale-105">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-acc2 to-vio text-[11px] font-bold text-white">
+                    {initialsOf(user.name)}
+                  </span>
+                </button>
+              </Tip>
+            ) : (
+              <>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-acc2 to-vio text-[11px] font-bold text-white">
+                  {initialsOf(user.name)}
+                </span>
+                <div className="min-w-0 flex-1 leading-tight">
+                  <p className="truncate text-xs font-semibold text-ink">{user.name}</p>
+                  <p className="truncate font-mono text-[10px] text-faint">{user.email}</p>
+                </div>
+                <Tip label="Sign out">
+                  <button
+                    onClick={onSignOut}
+                    aria-label="Sign out"
+                    className="rounded-md p-1.5 text-mut transition-colors hover:bg-bad/10 hover:text-bad"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </Tip>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -161,7 +205,15 @@ export default function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const [docs, setDocs] = useState(() => api.getDocumentsSync());
+  const [user, setUser] = useState<AuthUser | null>(() => auth.getSessionUser());
   const profileRef = useClickOutside(() => setProfileOpen(false));
+
+  useEffect(() => auth.subscribe(setUser), []);
+
+  const handleSignOut = () => {
+    setProfileOpen(false);
+    auth.signOut().then(() => toast("Signed out.", "info"));
+  };
 
   useEffect(() => {
     setMobileOpen(false);
@@ -201,7 +253,9 @@ export default function AppShell() {
         <SidebarContent
           collapsed={collapsed}
           docs={docs}
+          user={user}
           onSettings={() => setSettingsOpen(true)}
+          onSignOut={handleSignOut}
         />
       </aside>
 
@@ -215,13 +269,23 @@ export default function AppShell() {
           <Menu className="w-5 h-5" />
         </button>
         <Logo />
-        <button
-          onClick={toggle}
-          aria-label="Toggle theme"
-          className="rounded-lg p-2 text-mut hover:text-ink hover:bg-ink/5"
-        >
-          {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="rounded-lg p-2 text-mut hover:text-ink hover:bg-ink/5"
+          >
+            {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+          </button>
+          <button
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            title="Sign out"
+            className="rounded-lg p-2 text-mut hover:bg-bad/10 hover:text-bad"
+          >
+            <LogOut className="w-[18px] h-[18px]" />
+          </button>
+        </div>
       </header>
 
       {/* mobile drawer */}
@@ -239,10 +303,15 @@ export default function AppShell() {
             <SidebarContent
               collapsed={false}
               docs={docs}
+              user={user}
               onNavigate={() => setMobileOpen(false)}
               onSettings={() => {
                 setMobileOpen(false);
                 setSettingsOpen(true);
+              }}
+              onSignOut={() => {
+                setMobileOpen(false);
+                handleSignOut();
               }}
             />
           </div>
@@ -276,11 +345,11 @@ export default function AppShell() {
           className="flex items-center gap-2.5 rounded-full border border-line bg-panel2 pl-1.5 pr-3 py-1.5 shadow-xl hover:border-line2 transition-colors"
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-acc2 to-vio text-[11px] font-bold text-white">
-            DJ
+            {user ? initialsOf(user.name) : "?"}
           </span>
           <span className="text-left leading-tight">
-            <span className="block text-xs font-semibold text-ink">Demo Judge</span>
-            <span className="block text-[10px] font-mono text-faint">hackathon guest</span>
+            <span className="block text-xs font-semibold text-ink">{user?.name ?? "Guest"}</span>
+            <span className="block text-[10px] font-mono text-faint">{user?.email ?? "not signed in"}</span>
           </span>
         </button>
         {profileOpen && (
@@ -309,6 +378,13 @@ export default function AppShell() {
               className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-mut hover:bg-ink/5 hover:text-ink"
             >
               <Settings2 className="w-3.5 h-3.5" /> Reset preferences
+            </button>
+            <div className="fade-rule my-1.5" />
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-bad hover:bg-bad/10"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Sign out
             </button>
           </div>
         )}
