@@ -23,4 +23,5 @@ python-dotenv
 SQLAlchemy
 psycopg2-binary
 passlib[bcrypt]
+bcrypt<4.1
 python-jose[cryptography]
