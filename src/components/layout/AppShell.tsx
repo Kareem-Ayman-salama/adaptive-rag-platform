@@ -134,7 +134,7 @@ function SidebarContent({
             </span>
             <div className="min-w-0">
               <p className="text-xs font-medium text-ink leading-tight">All systems ready</p>
-              <p className="text-[10px] font-mono text-faint">demo services · mock</p>
+              <p className="text-[10px] font-mono text-faint">FastAPI services</p>
             </div>
           </div>
         )}
@@ -412,7 +412,7 @@ export default function AppShell() {
               <p className="text-sm text-ink">{branding.mode}</p>
               <p className="mt-1.5 text-xs text-mut">
                 Uploads, retrieval traces and analytics are simulated in the browser. Connect
-                <span className="font-mono text-acc"> src/services/api.ts</span> to the backend to go live.
+                <span className="font-mono text-acc"> FastAPI</span> backend connected.
               </p>
             </div>
           </div>

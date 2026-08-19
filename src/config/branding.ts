@@ -9,7 +9,7 @@ export const branding = {
   description:
     "Understand documents beyond text with adaptive multimodal retrieval and evidence-grounded AI.",
   version: "v0.4 · hackathon build",
-  mode: "Frontend demo — mock data until backend integration",
+  mode: "FastAPI backend connected",
 };
 
 export const nav = {

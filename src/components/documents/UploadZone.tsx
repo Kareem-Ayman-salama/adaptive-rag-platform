@@ -17,22 +17,27 @@ export default function UploadZone({
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [stage, setStage] = useState<UploadStage | null>(null);
   const [rejected, setRejected] = useState<string | null>(null);
   const [result, setResult] = useState<Document | null>(null);
   const [error, setError] = useState(false);
+  const onUploadedRef = useRef(onUploaded);
   const fileRef = useRef<HTMLInputElement>(null);
   const zoneRef = useClickOutside(() => {
     /* keep panel open */
   });
 
   useEffect(() => {
-    if (!fileName) return;
+    onUploadedRef.current = onUploaded;
+  }, [onUploaded]);
+
+  useEffect(() => {
+    if (!file) return;
     let cancelled = false;
     setStage({ label: "Uploading document...", progress: 8 });
-    const pages = 18 + Math.floor(Math.random() * 40);
     api
-      .uploadDocument(fileName, pages, (s: UploadStage) => {
+      .uploadDocument(file, (s: UploadStage) => {
         if (!cancelled) setStage(s);
       })
       .then((doc) => {
@@ -44,13 +49,13 @@ export default function UploadZone({
           toast("Analysis failed for the simulated file.", "bad");
         } else {
           toast(`${doc.name} analyzed and indexed.`);
-          onUploaded?.(doc);
+          onUploadedRef.current?.(doc);
         }
       });
     return () => {
       cancelled = true;
     };
-  }, [fileName, onUploaded]);
+  }, [file]);
 
   const onDrop = (e: DragEvent) => {
     e.preventDefault();
@@ -66,10 +71,12 @@ export default function UploadZone({
     setResult(null);
     setError(false);
     setFileName(file.name);
+    setFile(file);
   };
 
   const reset = () => {
     setFileName(null);
+    setFile(null);
     setResult(null);
     setError(false);
     setStage(null);
@@ -206,6 +213,7 @@ export default function UploadZone({
           setResult(null);
           setError(false);
           setFileName(f.name);
+          setFile(f);
           e.target.value = "";
         }}
       />

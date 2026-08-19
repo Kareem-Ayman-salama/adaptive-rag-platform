@@ -3,3 +3,9 @@ node_modules/
 dist/
 build/
 *.log
+.env
+**/.env
+__pycache__/
+*.pyc
+backend/documind_rag/documind_rag_uploads/
+backend/documind_rag/rag/.env

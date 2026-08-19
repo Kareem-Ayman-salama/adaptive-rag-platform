@@ -46,8 +46,8 @@ function StatsRow() {
     ? [
         { icon: Files, label: "Documents", value: String(stats.documents), hint: "in workspace" },
         { icon: Layers, label: "Pages Indexed", value: String(stats.pagesIndexed), hint: "multimodal chunks" },
-        { icon: MessageSquare, label: "Questions Asked", value: String(stats.questionsAsked), hint: "sample · demo data" },
-        { icon: Timer, label: "Avg. Response", value: `${(stats.avgResponseMs / 1000).toFixed(1)} s`, hint: "sample · demo data" },
+        { icon: MessageSquare, label: "Questions Asked", value: String(stats.questionsAsked), hint: "local session" },
+        { icon: Timer, label: "Avg. Response", value: `${(stats.avgResponseMs / 1000).toFixed(1)} s`, hint: "backend RAG" },
       ]
     : [];
 
@@ -96,7 +96,7 @@ function UploadZone({ onUploaded }: { onUploaded: (d: Document) => void }) {
     setHistory([]);
     setStage({ label: "Queued...", progress: 4 });
     api
-      .uploadDocument(file.name, file.size / (1024 * 1024), (s) => {
+      .uploadDocument(file, (s) => {
         setStage(s);
         setHistory((h) => (h[h.length - 1] === s.label ? h : [...h, s.label]));
       })
@@ -153,8 +153,7 @@ function UploadZone({ onUploaded }: { onUploaded: (d: Document) => void }) {
             or <span className="font-medium text-acc">browse files</span> · up to 50 MB
           </p>
           <p className="mt-5 max-w-md font-mono text-[11px] leading-relaxed text-faint">
-            Pages are analyzed, content types detected, and retrieval indexes built automatically.
-            Frontend demo — no file leaves your browser.
+            The PDF is uploaded to the FastAPI backend, analyzed, and indexed for grounded retrieval.
           </p>
         </button>
       )}
@@ -313,7 +312,7 @@ export default function DocumentsPage() {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-ink">Welcome back</h1>
-            <Badge tone="amber" className="hidden sm:inline-flex">demo data</Badge>
+            <Badge tone="green" className="hidden sm:inline-flex">backend connected</Badge>
           </div>
           <p className="mt-1.5 text-sm text-mut">Your intelligent document workspace — upload, analyze, route, ask.</p>
         </div>

@@ -1,0 +1,56 @@
+"""Document upload and indexing endpoints."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
+from documind_rag.app.core.dependencies import get_rag_manager
+from documind_rag.app.schemas import BuildRequest, BuildResponse
+from documind_rag.rag.service import ChatRagManager
+
+router = APIRouter(tags=["documents"])
+upload_root = Path(__file__).resolve().parents[2] / "documind_rag_uploads"
+
+
+@router.post("/build", response_model=BuildResponse)
+def build_index(
+    request: BuildRequest,
+    rag_manager: ChatRagManager = Depends(get_rag_manager),
+) -> BuildResponse:
+    """Build document indexes from PDF paths visible to the backend."""
+
+    try:
+        return rag_manager.build(request.pdf_paths, chat_id=request.chat_id)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/chats/{chat_id}/sources", response_model=BuildResponse)
+async def upload_chat_source(
+    chat_id: str,
+    files: list[UploadFile] = File(...),
+    rag_manager: ChatRagManager = Depends(get_rag_manager),
+) -> BuildResponse:
+    """Upload one or more PDFs and build indexes for a chat."""
+
+    saved_paths: list[str] = []
+    chat_dir = upload_root / chat_id
+    chat_dir.mkdir(parents=True, exist_ok=True)
+
+    for file in files:
+        if not file.filename or not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+        safe_name = Path(file.filename).name
+        path = chat_dir / f"{uuid4().hex}_{safe_name}"
+        path.write_bytes(await file.read())
+        saved_paths.append(str(path))
+
+    try:
+        return rag_manager.build(saved_paths, chat_id=chat_id)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
