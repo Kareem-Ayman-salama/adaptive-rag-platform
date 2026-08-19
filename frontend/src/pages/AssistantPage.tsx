@@ -56,6 +56,37 @@ const STAGE_LABELS = [
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+type SpeechRecognitionResultEvent = Event & {
+  results: {
+    length: number;
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: { transcript: string };
+    };
+  };
+};
+
+type SpeechRecognition = EventTarget & {
+  lang: string;
+  interimResults: boolean;
+  continuous: boolean;
+  start: () => void;
+  stop: () => void;
+  onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognition;
+
+const getSpeechRecognition = (): SpeechRecognitionConstructor | null => {
+  const speechWindow = window as Window & {
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
+  };
+  return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition ?? null;
+};
+
 /* --------------------------- answer + citations --------------------------- */
 
 function AnswerText({ text, onCite }: { text: string; onCite: (label: string) => void }) {
@@ -262,6 +293,8 @@ export default function AssistantPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [pendingAnalysis, setPendingAnalysis] = useState<QueryResult | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const readyDocs = api.getDocumentsSync().filter((d) => d.status === "ready");
 
@@ -272,6 +305,41 @@ export default function AssistantPage() {
   };
   const scrollRef = useRef<HTMLDivElement>(null);
   const busy = stages !== null;
+
+  const startVoiceInput = () => {
+    if (busy || doc === null) return;
+    if (listening) {
+      recognitionRef.current?.stop();
+      setListening(false);
+      return;
+    }
+
+    const SpeechRecognitionImpl = getSpeechRecognition();
+    if (!SpeechRecognitionImpl) {
+      toast("Voice input is not supported in this browser. Chrome works best.", "info");
+      return;
+    }
+
+    const recognition = new SpeechRecognitionImpl();
+    recognition.lang = input.trim().match(/[\u0600-\u06ff]/) ? "ar-EG" : "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.onresult = (event) => {
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i += 1) {
+        transcript += event.results[i][0]?.transcript ?? "";
+      }
+      setInput(transcript.trim());
+    };
+    recognition.onerror = () => {
+      toast("Voice input could not hear clearly. Try again or type your question.", "info");
+      setListening(false);
+    };
+    recognition.onend = () => setListening(false);
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
+  };
 
   useEffect(() => {
     let live = true;
@@ -555,14 +623,19 @@ export default function AssistantPage() {
                 disabled={busy || doc === null}
                 className="h-12 flex-1 rounded-xl border border-line bg-inset px-4 text-sm text-ink placeholder:text-faint outline-none transition-colors focus:border-acc/50 focus:bg-panel disabled:opacity-50"
               />
-              <Tip label="Ask by voice — coming soon">
+              <Tip label={listening ? "Stop voice input" : "Ask by voice"}>
                 <button
                   type="button"
-                  aria-label="Voice input (coming soon)"
-                  onClick={() => toast("Voice input is coming soon — type your question for now.", "info")}
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-line bg-panel text-mut transition-all hover:border-vio/40 hover:text-vio active:scale-95"
+                  aria-label={listening ? "Stop voice input" : "Start voice input"}
+                  onClick={startVoiceInput}
+                  className={cn(
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-panel transition-all active:scale-95",
+                    listening
+                      ? "border-vio/50 bg-vio/10 text-vio"
+                      : "border-line text-mut hover:border-vio/40 hover:text-vio"
+                  )}
                 >
-                  <Mic className="w-4 h-4" />
+                  <Mic className={cn("w-4 h-4", listening && "blink")} />
                 </button>
               </Tip>
               <Tip label="Attach a new source PDF">

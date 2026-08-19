@@ -34,6 +34,7 @@ SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 def init_db() -> None:
     """Create database tables when the application starts."""
 
+    from documind_rag.app.models import document_source  # noqa: F401
     from documind_rag.app.models import user  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
@@ -47,4 +48,3 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
-

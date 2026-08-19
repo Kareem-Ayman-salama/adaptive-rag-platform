@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from documind_rag.app.controllers.auth_controller import get_current_user
+from documind_rag.app.controllers.index_rebuild import (
+    is_missing_index_error,
+    rebuild_chat_index,
+)
+from documind_rag.app.core.database import get_db
 from documind_rag.app.core.dependencies import get_rag_manager
 from documind_rag.app.models.user import User
 from documind_rag.app.schemas import AskRequest, AskResponse, ChatHistoryResponse
@@ -17,6 +23,7 @@ router = APIRouter(tags=["assistant"])
 def ask(
     request: AskRequest,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     rag_manager: ChatRagManager = Depends(get_rag_manager),
 ) -> AskResponse:
     """Answer a user question against the loaded document indexes."""
@@ -30,6 +37,19 @@ def ask(
             use_memory=request.use_memory,
         )
     except RuntimeError as exc:
+        if is_missing_index_error(exc) and rebuild_chat_index(
+            chat_id=request.chat_id,
+            user=current_user,
+            db=db,
+            rag_manager=rag_manager,
+        ):
+            return rag_manager.ask(
+                request.query,
+                chat_id=request.chat_id,
+                document_ids=request.document_ids,
+                verbose=request.verbose,
+                use_memory=request.use_memory,
+            )
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

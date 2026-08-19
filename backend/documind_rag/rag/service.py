@@ -194,7 +194,7 @@ class RagService:
             unsupported_claims=unsupported_claims,
             sources=raw.get("sources", []),
             evidence=[EvidenceItem(**item) for item in raw.get("evidence", [])],
-            claims=[ClaimItem(**claim) if isinstance(claim, dict) else claim for claim in claims],
+            claims=[ClaimItem(**claim) for claim in claims if isinstance(claim, dict)],
             sub_questions=raw.get("sub_questions", []),
             raw=raw,
         )

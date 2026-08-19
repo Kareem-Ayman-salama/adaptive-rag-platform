@@ -6,8 +6,14 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
 from documind_rag.app.controllers.auth_controller import get_current_user
+from documind_rag.app.controllers.index_rebuild import (
+    is_missing_index_error,
+    rebuild_chat_index,
+)
+from documind_rag.app.core.database import get_db
 from documind_rag.app.core.dependencies import get_rag_manager
 from documind_rag.app.models.user import User
 from documind_rag.app.schemas import AskResponse, ExamRequest, ExamResponse
@@ -54,6 +60,7 @@ def _parse_exam_payload(response: AskResponse) -> dict[str, Any]:
 def generate_exam(
     request: ExamRequest,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
     rag_manager: ChatRagManager = Depends(get_rag_manager),
 ) -> ExamResponse:
     """Generate a source-grounded exam for teachers or doctors."""
@@ -70,6 +77,22 @@ def generate_exam(
         )
         return ExamResponse(**_parse_exam_payload(response))
     except RuntimeError as exc:
+        if is_missing_index_error(exc) and rebuild_chat_index(
+            chat_id=request.chat_id,
+            user=current_user,
+            db=db,
+            rag_manager=rag_manager,
+        ):
+            response = rag_manager.generate_exam(
+                chat_id=request.chat_id,
+                topic=request.topic,
+                difficulty=request.difficulty,
+                question_count=request.question_count,
+                total_marks=request.total_marks,
+                question_types=request.question_types,
+                language=request.language,
+            )
+            return ExamResponse(**_parse_exam_payload(response))
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
         if isinstance(exc, HTTPException):
