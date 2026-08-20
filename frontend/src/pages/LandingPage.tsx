@@ -655,7 +655,7 @@ function ExamSection() {
 
 function TeamSection() {
   const members = [
-    { name: "Kareem Ayman", initials: "KA", from: "var(--acc2)", to: "var(--acc)" },
+    { name: "Kareem Ayman", initials: "KA", from: "var(--acc2)", to: "var(--acc)", photo: "/team/kareem-ayman.png" },
     { name: "Jana Ashraf", initials: "JA", from: "var(--vio)", to: "var(--acc2)" },
     { name: "Sama Hany", initials: "SH", from: "var(--ok)", to: "var(--acc)" },
     { name: "Sara Elsafty", initials: "SE", from: "var(--warn)", to: "var(--vio)" },
@@ -688,12 +688,21 @@ function TeamSection() {
                   style={{ background: m.from }}
                 />
                 <div className="relative mx-auto w-fit rounded-2xl border border-line2 p-1.5 transition-transform duration-300 group-hover:-rotate-2 group-hover:scale-105">
-                  <span
-                    className="flex h-16 w-16 items-center justify-center rounded-xl font-display text-xl font-bold text-white"
-                    style={{ background: `linear-gradient(135deg, ${m.from}, ${m.to})` }}
-                  >
-                    {m.initials}
-                  </span>
+                  {m.photo ? (
+                    <img
+                      src={m.photo}
+                      alt={`${m.name} photo`}
+                      className="h-16 w-16 rounded-xl object-cover object-[50%_28%]"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span
+                      className="flex h-16 w-16 items-center justify-center rounded-xl font-display text-xl font-bold text-white"
+                      style={{ background: `linear-gradient(135deg, ${m.from}, ${m.to})` }}
+                    >
+                      {m.initials}
+                    </span>
+                  )}
                 </div>
                 <p className="mt-4 font-display text-[15px] font-semibold text-ink">{m.name}</p>
                 <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-faint">Kemet AI</p>
