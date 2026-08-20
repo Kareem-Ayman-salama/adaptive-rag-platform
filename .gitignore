@@ -14,3 +14,5 @@ docs/presentation/documind-ai-presentation/
 docs/presentation/*-montage.png
 docs/presentation/*.inspect.ndjson
 docs/presentation/node_modules/
+docs/doc_render/
+docs/pdf_render/
