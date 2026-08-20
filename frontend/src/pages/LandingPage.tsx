@@ -3,6 +3,9 @@ import { useNavigate } from "react-router-dom";
 import {
   Menu,
   X,
+  Sun,
+  Moon,
+  Languages,
   ArrowRight,
   ArrowDown,
   Upload,
@@ -65,11 +68,26 @@ function VConn() {
   return <div className="vline mx-auto h-5" aria-hidden="true" />;
 }
 
+function MobileRail({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 /* -------------------------------- nav -------------------------------- */
 
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState(() => document.documentElement.getAttribute("data-theme") || "dark");
+  const [language, setLanguage] = useState(() => localStorage.getItem("dm-landing-language") || "EN");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,6 +96,25 @@ function Nav() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.documentElement.dir = language === "AR" ? "rtl" : "ltr";
+  }, [language, theme]);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("dm-theme", next);
+    setTheme(next);
+  };
+
+  const toggleLanguage = () => {
+    const next = language === "EN" ? "AR" : "EN";
+    localStorage.setItem("dm-landing-language", next);
+    document.documentElement.dir = next === "AR" ? "rtl" : "ltr";
+    setLanguage(next);
+  };
 
   const links: Array<{ label: string; id: string }> = [
     { label: "Product", id: "product" },
@@ -110,6 +147,21 @@ function Nav() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-panel/70 text-mut transition-colors hover:border-line2 hover:text-ink"
+          >
+            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={toggleLanguage}
+            aria-label="Toggle language"
+            className="hidden h-9 items-center gap-1.5 rounded-lg border border-line bg-panel/70 px-2.5 font-mono text-[11px] text-mut transition-colors hover:border-line2 hover:text-ink sm:inline-flex"
+          >
+            <Languages className="w-4 h-4" />
+            {language}
+          </button>
           <Button size="sm" className="hidden sm:inline-flex" onClick={() => navigate(nav.documents)}>
             Launch App <ArrowRight className="w-3.5 h-3.5" />
           </Button>
@@ -136,6 +188,12 @@ function Nav() {
               {l.label}
             </button>
           ))}
+          <button
+            onClick={toggleLanguage}
+            className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-inset px-3 py-2.5 font-mono text-[12px] text-mut hover:bg-ink/5 hover:text-ink"
+          >
+            <Languages className="w-4 h-4" /> Language · {language}
+          </button>
           <Button className="mt-2 w-full" onClick={() => navigate(nav.documents)}>
             Launch App <ArrowRight className="w-3.5 h-3.5" />
           </Button>
@@ -324,9 +382,9 @@ function Comparison() {
             desc="Flat text extraction throws away most of what makes a document a document. The adaptive pipeline keeps every modality retrievable."
           />
         </Reveal>
-        <div className="mt-14 grid gap-6 lg:grid-cols-2">
+        <MobileRail className="mt-14 sm:grid-cols-2 lg:grid-cols-2">
           <Reveal>
-            <Card className="h-full p-7 opacity-90">
+            <Card className="h-full min-w-[82vw] snap-start p-7 opacity-90 sm:min-w-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-lg font-semibold text-mut">Traditional PDF RAG</h3>
                 <Badge tone="red">baseline</Badge>
@@ -358,7 +416,7 @@ function Comparison() {
             </Card>
           </Reveal>
           <Reveal delay={120}>
-            <Card className="relative h-full overflow-hidden border-acc/30 p-7 shadow-[0_0_60px_-24px_color-mix(in_oklab,var(--acc)_50%,transparent)]">
+            <Card className="relative h-full min-w-[82vw] snap-start overflow-hidden border-acc/30 p-7 shadow-[0_0_60px_-24px_color-mix(in_oklab,var(--acc)_50%,transparent)] sm:min-w-0">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_80%_0%,color-mix(in_oklab,var(--acc)_8%,transparent),transparent_70%)]" />
               <div className="relative">
                 <div className="flex items-center justify-between">
@@ -406,7 +464,7 @@ function Comparison() {
               </div>
             </Card>
           </Reveal>
-        </div>
+        </MobileRail>
       </div>
     </section>
   );
@@ -441,10 +499,10 @@ function Capabilities() {
             desc="Each capability is a real stage in the retrieval flow — not a marketing bullet."
           />
         </Reveal>
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MobileRail className="mt-14 sm:grid-cols-2 xl:grid-cols-4">
           {caps.map((c, i) => (
             <Reveal key={c.title} delay={(i % 4) * 80}>
-              <Card hover className="group h-full p-6">
+              <Card hover className="group h-full min-w-[72vw] snap-start p-6 sm:min-w-0">
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-lg border transition-transform duration-300 group-hover:scale-110"
                   style={{
@@ -463,7 +521,7 @@ function Capabilities() {
               </Card>
             </Reveal>
           ))}
-        </div>
+        </MobileRail>
       </div>
     </section>
   );
@@ -494,10 +552,10 @@ function ExamSection() {
               Point it at a lecture, a paper, or a manual — get questions with a grounded answer key, not guesswork.
             </p>
           </Reveal>
-          <div className="mt-8 space-y-5">
+          <MobileRail className="mt-8 sm:grid-cols-2">
             {bullets.map((b, i) => (
               <Reveal key={b.title} delay={i * 90}>
-                <div className="flex items-start gap-4">
+                <div className="flex min-w-[76vw] snap-start items-start gap-4 rounded-xl border border-line bg-panel p-4 sm:min-w-0 sm:border-0 sm:bg-transparent sm:p-0">
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border"
                     style={{
@@ -515,7 +573,7 @@ function ExamSection() {
                 </div>
               </Reveal>
             ))}
-          </div>
+          </MobileRail>
           <Reveal delay={360}>
             <div className="mt-9">
               <Button size="lg" onClick={() => navigate(nav.exams)}>
@@ -617,12 +675,12 @@ function TeamSection() {
             desc="Named after Kemet — the ancient name of Egypt, the black land. We build document intelligence for the next era of knowledge."
           />
         </Reveal>
-        <div className="mx-auto mt-14 grid max-w-5xl grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        <MobileRail className="mx-auto mt-14 max-w-5xl sm:grid-cols-3 lg:grid-cols-5">
           {members.map((m, i) => (
             <Reveal
               key={m.name}
               delay={i * 90}
-              className={cn(i === members.length - 1 && "col-span-2 sm:col-span-1")}
+              className={cn("min-w-[48vw] snap-start sm:min-w-0", i === members.length - 1 && "sm:col-span-1")}
             >
               <Card hover className="group relative overflow-hidden p-6 text-center">
                 <div
@@ -642,7 +700,7 @@ function TeamSection() {
               </Card>
             </Reveal>
           ))}
-        </div>
+        </MobileRail>
       </div>
     </section>
   );
@@ -721,11 +779,11 @@ function Architecture() {
                   <p className="mb-2.5 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-faint">
                     modality pipelines
                   </p>
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
                     {pipelines.map((p) => (
                       <div
                         key={p.label}
-                        className="pipe-node flex flex-col items-center gap-1.5 rounded-lg border border-line bg-panel2 px-3 py-4"
+                        className="pipe-node flex min-w-[155px] snap-start flex-col items-center gap-1.5 rounded-lg border border-line bg-panel2 px-3 py-4 sm:min-w-0"
                       >
                         <p.icon className="w-5 h-5" style={{ color: p.color }} />
                         <span className="text-[13px] font-semibold text-ink">{p.label}</span>
@@ -751,13 +809,13 @@ function Architecture() {
               <VConn />
 
               <Reveal delay={440} className="w-full max-w-2xl">
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
                   {[
                     { icon: MessageSquare, label: "Answer", color: "var(--acc)" },
                     { icon: Quote, label: "Citations", color: "var(--acc2)" },
                     { icon: BadgeCheck, label: "Evidence", color: "var(--ok)" },
                   ].map((o) => (
-                    <div key={o.label} className="flex items-center justify-center gap-2 rounded-lg border border-line bg-panel2 px-3 py-3">
+                    <div key={o.label} className="flex min-w-[150px] snap-start items-center justify-center gap-2 rounded-lg border border-line bg-panel2 px-3 py-3 sm:min-w-0">
                       <o.icon className="w-4 h-4" style={{ color: o.color }} />
                       <span className="text-[13px] font-semibold text-ink">{o.label}</span>
                     </div>
@@ -796,10 +854,10 @@ function HowItWorks() {
             desc="The demo walks this exact path — every stage has a surface in the UI."
           />
         </Reveal>
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <MobileRail className="mt-14 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
             <Reveal key={s.title} delay={(i % 4) * 90}>
-              <div className="group relative h-full rounded-xl border border-line bg-panel p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-line2">
+              <div className="group relative h-full min-w-[72vw] snap-start rounded-xl border border-line bg-panel p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-line2 sm:min-w-0">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-2xl font-bold text-acc/80">{String(i + 1).padStart(2, "0")}</span>
                   <s.icon className="w-4 h-4 text-faint transition-colors group-hover:text-acc" />
@@ -819,7 +877,7 @@ function HowItWorks() {
             </Reveal>
           ))}
           <Reveal delay={270}>
-            <div className="flex h-full flex-col items-start justify-center rounded-xl border border-dashed border-acc/30 bg-acc/5 p-6">
+            <div className="flex h-full min-w-[72vw] snap-start flex-col items-start justify-center rounded-xl border border-dashed border-acc/30 bg-acc/5 p-6 sm:min-w-0">
               <Layers className="w-5 h-5 text-acc" />
               <p className="mt-3 font-display text-[15px] font-semibold text-ink">See it live</p>
               <p className="mt-1.5 text-[13px] text-mut">The workspace runs all seven stages on mock data.</p>
@@ -831,7 +889,7 @@ function HowItWorks() {
               </button>
             </div>
           </Reveal>
-        </div>
+        </MobileRail>
       </div>
     </section>
   );
