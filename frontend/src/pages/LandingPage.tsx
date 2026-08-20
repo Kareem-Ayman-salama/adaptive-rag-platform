@@ -72,7 +72,7 @@ function MobileRail({ children, className }: { children: ReactNode; className?: 
   return (
     <div
       className={cn(
-        "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0",
+        "-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0 [&>*]:snap-start sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0 sm:[&>*]:shrink",
         className
       )}
     >
@@ -680,9 +680,9 @@ function TeamSection() {
             <Reveal
               key={m.name}
               delay={i * 90}
-              className={cn("min-w-[48vw] snap-start sm:min-w-0", i === members.length - 1 && "sm:col-span-1")}
+              className={cn("min-w-[64vw] sm:min-w-0", i === members.length - 1 && "sm:col-span-1")}
             >
-              <Card hover className="group relative overflow-hidden p-6 text-center">
+              <Card hover className="group relative overflow-hidden p-5 text-center sm:p-6">
                 <div
                   className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-[0.08] transition-opacity duration-300 group-hover:opacity-[0.16]"
                   style={{ background: m.from }}
@@ -692,12 +692,12 @@ function TeamSection() {
                     <img
                       src={m.photo}
                       alt={`${m.name} photo`}
-                      className="h-16 w-16 rounded-xl object-cover object-[50%_28%]"
+                      className="h-28 w-28 rounded-xl object-cover object-[50%_28%] sm:h-24 sm:w-24 lg:h-20 lg:w-20"
                       loading="lazy"
                     />
                   ) : (
                     <span
-                      className="flex h-16 w-16 items-center justify-center rounded-xl font-display text-xl font-bold text-white"
+                      className="flex h-28 w-28 items-center justify-center rounded-xl font-display text-2xl font-bold text-white sm:h-24 sm:w-24 lg:h-20 lg:w-20"
                       style={{ background: `linear-gradient(135deg, ${m.from}, ${m.to})` }}
                     >
                       {m.initials}
@@ -788,11 +788,11 @@ function Architecture() {
                   <p className="mb-2.5 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-faint">
                     modality pipelines
                   </p>
-                  <div className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+                  <div className="flex snap-x gap-2 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
                     {pipelines.map((p) => (
                       <div
                         key={p.label}
-                        className="pipe-node flex min-w-[155px] snap-start flex-col items-center gap-1.5 rounded-lg border border-line bg-panel2 px-3 py-4 sm:min-w-0"
+                        className="pipe-node flex min-w-[155px] shrink-0 snap-start flex-col items-center gap-1.5 rounded-lg border border-line bg-panel2 px-3 py-4 sm:min-w-0 sm:shrink"
                       >
                         <p.icon className="w-5 h-5" style={{ color: p.color }} />
                         <span className="text-[13px] font-semibold text-ink">{p.label}</span>
@@ -818,13 +818,13 @@ function Architecture() {
               <VConn />
 
               <Reveal delay={440} className="w-full max-w-2xl">
-                <div className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
+                <div className="flex snap-x gap-2 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0">
                   {[
                     { icon: MessageSquare, label: "Answer", color: "var(--acc)" },
                     { icon: Quote, label: "Citations", color: "var(--acc2)" },
                     { icon: BadgeCheck, label: "Evidence", color: "var(--ok)" },
                   ].map((o) => (
-                    <div key={o.label} className="flex min-w-[150px] snap-start items-center justify-center gap-2 rounded-lg border border-line bg-panel2 px-3 py-3 sm:min-w-0">
+                    <div key={o.label} className="flex min-w-[150px] shrink-0 snap-start items-center justify-center gap-2 rounded-lg border border-line bg-panel2 px-3 py-3 sm:min-w-0 sm:shrink">
                       <o.icon className="w-4 h-4" style={{ color: o.color }} />
                       <span className="text-[13px] font-semibold text-ink">{o.label}</span>
                     </div>
