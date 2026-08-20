@@ -656,7 +656,7 @@ function ExamSection() {
 function TeamSection() {
   const members = [
     { name: "Kareem Ayman", initials: "KA", from: "var(--acc2)", to: "var(--acc)", photo: "/team/kareem-ayman.png" },
-    { name: "Jana Ashraf", initials: "JA", from: "var(--vio)", to: "var(--acc2)" },
+    { name: "Jana Ashraf", initials: "JA", from: "var(--vio)", to: "var(--acc2)", photo: "/team/jana-ashraf.png" },
     { name: "Sama Hany", initials: "SH", from: "var(--ok)", to: "var(--acc)" },
     { name: "Sara Elsafty", initials: "SE", from: "var(--warn)", to: "var(--vio)" },
     { name: "Nadin Farid", initials: "NF", from: "var(--bad)", to: "var(--warn)" },
