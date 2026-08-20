@@ -10,3 +10,7 @@ __pycache__/
 *.pyc
 backend/documind_rag/documind_rag_uploads/
 backend/documind_rag/rag/.env
+docs/presentation/documind-ai-presentation/
+docs/presentation/*-montage.png
+docs/presentation/*.inspect.ndjson
+docs/presentation/node_modules/
